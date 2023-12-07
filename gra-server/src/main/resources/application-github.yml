@@ -1,0 +1,44 @@
+fd-auth-server:
+  sigKeyConfig:
+    fileName: classpath:cert/ref-key.p12
+    keyId: puk_fd_sig
+    use: sig
+    x5cInJwks: false
+  tlsClientKeyConfig:
+    fileName: classpath:cert/ref-key.p12
+    keyId: puk_tls_sig
+    use: sig
+    x5cInJwks: true
+  encKeyConfig:
+    fileName: classpath:cert/ref-key.p12
+    keyId: puk_fd_enc
+    use: enc
+    x5cInJwks: false
+  tokenKeyConfig:
+    fileName: classpath:cert/ref-key.p12
+    keyId: puk_token_sig
+    use: sig
+    x5cInJwks: false
+  symmetricEncryptionKey: "setYourKeyHere"
+  serverUrl: "${FD_AUTH_SERVER_URL:https://idpfadi.dev.gematik.solutions}"
+  fedmasterUrl: "${FEDMASTER_SERVER_URL:https://app-test.federationmaster.de}"
+  debug:
+    requestLogging: true
+  loglevel: info
+server:
+  port: ${SERVER_PORT:8084}
+management:
+  server:
+    port: ${MANAGEMENT_PORT:8184}
+  endpoints:
+    web:
+      exposure:
+        include: "health"
+    enabled-by-default: false
+  endpoint:
+    health:
+      enabled: true
+    metrics:
+      enabled: true
+    logfile:
+      enabled: true
