@@ -1,0 +1,23 @@
+# minimum viable test environment specification
+tigerProxy:
+  adminPort: ${free.port.201}
+  proxyPort: ${free.port.200}
+  keyFolders:
+    - .
+
+lib:
+  activateWorkflowUI: false
+  rbelPathDebugging: false
+
+servers:
+  graserver:
+    type: externalUrl
+    startupTimeoutSec: 1
+    source:
+      - https://localhost:443
+    active: true
+
+fachdienstEntityStatementPath: .well-known/openid-federation
+
+fachdienstEntityStatementEndpoint: http://graserver/${tiger.fachdienstEntityStatementPath}
+
