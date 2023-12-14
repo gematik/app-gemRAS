@@ -8,6 +8,10 @@ ports:
 tigerProxy:
   adminPort: ${free.port.201}
   proxyPort: ${free.port.200}
+  forwardToProxy:
+    hostname: 192.168.110.10
+    port: 3128
+    type: https
   keyFolders:
     - .
 
@@ -15,15 +19,12 @@ lib:
   activateWorkflowUI: false
   rbelPathDebugging: false
 
-additionalYamls:
-  - filename: tc_properties-local.yaml
-    baseKey: gras
 
 servers:
   graserver:
     type: externalJar
     environment:
-      - GRA_SERVER_URL=http://127.0.0.1:${tiger.ports.graserver}
+      - FD_AUTH_SERVER_URL=http://127.0.0.1:${tiger.ports.graserver}
     healthcheckUrl: http://127.0.0.1:${tiger.ports.graserver}
     externalJarOptions:
       arguments:
@@ -33,3 +34,7 @@ servers:
       - local://gra-server-${tiger.gras.version}.jar
     startupTimeoutSec: 60
     active: true
+
+fachdienstEntityStatementPath: .well-known/openid-federation
+
+fachdienstEntityStatementEndpoint: http://graserver/${tiger.fachdienstEntityStatementPath}

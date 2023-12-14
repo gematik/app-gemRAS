@@ -174,13 +174,13 @@
     <artifactId>gras-global</artifactId>
     <groupId>de.gematik.idp</groupId>
     <relativePath>../pom.xml</relativePath>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
   </parent>
 
   <properties>
     <commit_hash>undefined</commit_hash>
   </properties>
 
-  <version>3.0.0</version>
+  <version>3.0.1</version>
 
 </project>

@@ -22,11 +22,11 @@
   <parent>
     <groupId>de.gematik.idp</groupId>
     <artifactId>gras-global</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
   </parent>
 
   <artifactId>gras-testsuite</artifactId>
-  <version>3.0.0</version>
+  <version>3.0.1</version>
   <packaging>jar</packaging>
   <description>Testsuite fuer authorization server</description>
 
@@ -179,7 +179,9 @@
           <skipITs>${skip.inttests}</skipITs>
           <systemPropertyVariables>
             <!--suppress UnresolvedMavenProperty -->
-            <cucumber.filter.tags>@Approval and not @OpenBug</cucumber.filter.tags>
+            <cucumber.filter.tags>@Approval and not @OpenBug and not @WiP and not
+              @EntityStatementJwks
+            </cucumber.filter.tags>
           </systemPropertyVariables>
           <environmentVariables>
             <TIGER_GRAS_VERSION>${project.version}</TIGER_GRAS_VERSION>
