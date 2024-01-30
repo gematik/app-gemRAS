@@ -45,7 +45,7 @@ class AuthorizationControllerIdpListTest {
   private Map<String, Object> bodyClaims;
 
   @BeforeAll
-  public void setup() {
+  void setup() {
     testHostUrl = "http://localhost:" + localServerPort;
     responseGood = retrieveIdpList();
     assertThat(responseGood.getStatus()).isEqualTo(HttpStatus.OK);

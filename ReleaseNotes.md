@@ -1,3 +1,7 @@
+# Release 4.0.0
+
+- refactor key handling, use PrivateKey instead of p12 container when certificate is not required
+
 # Release 3.0.2
 
 - add unit test

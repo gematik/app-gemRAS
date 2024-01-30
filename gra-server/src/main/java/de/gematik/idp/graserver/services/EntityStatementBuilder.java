@@ -18,7 +18,7 @@ package de.gematik.idp.graserver.services;
 
 import static de.gematik.idp.graserver.Constants.FED_SIGNED_JWKS_ENDPOINT;
 
-import de.gematik.idp.data.FederationPrivKey;
+import de.gematik.idp.data.FederationPubKey;
 import de.gematik.idp.data.JwtHelper;
 import de.gematik.idp.graserver.data.EntityStatement;
 import de.gematik.idp.graserver.data.FederationEntity;
@@ -35,9 +35,7 @@ public class EntityStatementBuilder {
 
   private static final int ENTITY_STATEMENT_TTL_DAYS = 1;
   private static final int ENTITY_STATEMENT_EXPIRED_DAYS_IN_PAST = 2;
-  @Autowired FederationPrivKey sigKey;
-  @Autowired FederationPrivKey encKey;
-  @Autowired FederationPrivKey tlsClientKey;
+  @Autowired FederationPubKey esSigPubKey;
 
   public EntityStatement buildEntityStatement(final String serverUrl, final String fedmasterUrl) {
     log.debug("build EntityStatement, serverUrl: " + serverUrl);
@@ -54,7 +52,7 @@ public class EntityStatementBuilder {
         .iat(currentTime.toEpochSecond())
         .iss(serverUrl)
         .sub(serverUrl)
-        .jwks(JwtHelper.getJwks(sigKey))
+        .jwks(JwtHelper.getJwks(esSigPubKey))
         .authorityHints(new String[] {fedmasterUrl})
         .metadata(getMetadata(serverUrl))
         .build();
@@ -73,7 +71,7 @@ public class EntityStatementBuilder {
         .iat(currentTime.minusDays(ENTITY_STATEMENT_EXPIRED_DAYS_IN_PAST).toEpochSecond())
         .iss(serverUrl)
         .sub(serverUrl)
-        .jwks(JwtHelper.getJwks(sigKey))
+        .jwks(JwtHelper.getJwks(esSigPubKey))
         .authorityHints(new String[] {fedmasterUrl})
         .metadata(getMetadata(serverUrl))
         .build();

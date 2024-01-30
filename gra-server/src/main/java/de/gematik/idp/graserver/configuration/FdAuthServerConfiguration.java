@@ -35,10 +35,13 @@ import org.springframework.stereotype.Component;
 public class FdAuthServerConfiguration {
 
   private String serverUrl;
-  private KeyConfig sigKeyConfig;
-  private KeyConfig encKeyConfig;
-  private KeyConfig tokenKeyConfig;
-  private KeyConfig tlsClientKeyConfig;
+  private KeyConfig esSigPrivKeyConfig;
+  private KeyConfig esSigPubKeyConfig;
+  private KeyConfig tokenSigPrivKeyConfig;
+  private KeyConfig tokenSigPubKeyConfig;
+  private KeyConfig encPrivKeyConfig;
+  private KeyConfig encPubKeyConfig;
+  private KeyConfig tlsClientPrivKeyConfig;
   private String symmetricEncryptionKey;
   private String fedmasterUrl;
   private String clientId;

@@ -35,7 +35,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class EntityStatementBuilderTest {
 
-  @Autowired private IdpJwtProcessor jwtProcessorSigKey;
+  @Autowired private IdpJwtProcessor jwtProcessorEsSigPrivKey;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private EntityStatementBuilder entityStatementBuilder;
   @Autowired private ServerUrlService serverUrlService;
@@ -48,7 +48,7 @@ class EntityStatementBuilderTest {
         ZonedDateTime.now().plusYears(entityStatementTtlYears).toEpochSecond();
     final String es =
         JwtHelper.signJson(
-            jwtProcessorSigKey,
+            jwtProcessorEsSigPrivKey,
             objectMapper,
             entityStatementBuilder.buildEntityStatement(
                 "http://localhost:8084",

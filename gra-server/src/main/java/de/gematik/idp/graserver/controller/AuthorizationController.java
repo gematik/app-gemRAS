@@ -82,7 +82,7 @@ public class AuthorizationController {
 
   public static final int AUTH_CODE_LENGTH = 16;
 
-  @Autowired FederationPrivKey encKey;
+  @Autowired FederationPrivKey encPrivKey;
   private static final int NONCE_LENGTH_MAX = 512;
 
   private static final int MAX_AUTH_SESSION_AMOUNT = 10000;
@@ -91,7 +91,7 @@ public class AuthorizationController {
   private final EntityStmntIdpsService entityStmntIdpsService;
   private final EntityListService entityListService;
   private final ClientAssertionBuilder clientAssertionBuilder;
-  private final IdpJwtProcessor jwtProcessorSigKey;
+  private final IdpJwtProcessor jwtProcessorEsSigPrivKey;
   private final ObjectMapper objectMapper;
   private final EntityStatementBuilder entityStatementBuilder;
   private final JwksBuilder jwksBuilder;
@@ -123,7 +123,7 @@ public class AuthorizationController {
       produces = "application/entity-statement+jwt;charset=UTF-8")
   public String getEntityStatement() {
     return JwtHelper.signJson(
-        jwtProcessorSigKey,
+        jwtProcessorEsSigPrivKey,
         objectMapper,
         entityStatementBuilder.buildEntityStatement(
             serverUrlService.determineServerUrl(), fdAuthServerConfiguration.getFedmasterUrl()),
@@ -142,7 +142,7 @@ public class AuthorizationController {
   @GetMapping(value = FED_SIGNED_JWKS_ENDPOINT, produces = "application/jwk-set+json;charset=UTF-8")
   public String getSignedJwks() {
     return JwtHelper.signJson(
-        jwtProcessorSigKey,
+        jwtProcessorEsSigPrivKey,
         objectMapper,
         jwksBuilder.build(serverUrlService.determineServerUrl()),
         "jwk-set+json");
@@ -157,7 +157,7 @@ public class AuthorizationController {
       produces = "application/entity-statement+jwt;charset=UTF-8")
   public String getExpiredEntityStatement() {
     return JwtHelper.signJson(
-        jwtProcessorSigKey,
+        jwtProcessorEsSigPrivKey,
         objectMapper,
         entityStatementBuilder.buildExpiredEntityStatement(
             serverUrlService.determineServerUrl(), fdAuthServerConfiguration.getFedmasterUrl()),
@@ -174,7 +174,7 @@ public class AuthorizationController {
   public String getInvalidSigEntityStatement() {
     final String jwsString =
         JwtHelper.signJson(
-            jwtProcessorSigKey,
+            jwtProcessorEsSigPrivKey,
             objectMapper,
             entityStatementBuilder.buildEntityStatement(
                 serverUrlService.determineServerUrl(), fdAuthServerConfiguration.getFedmasterUrl()),
@@ -335,7 +335,8 @@ public class AuthorizationController {
         "App2App-Flow: RX message nr 11 (ID_TOKEN + ACCESS_TOKEN), body: \n{}", respMsgNr11Body);
     final JsonWebToken idTokenEncrypted = new JsonWebToken(respMsgNr11Body.getIdToken());
     final IdpJwe idpJwe = new IdpJwe(idTokenEncrypted.getRawString());
-    final JsonWebToken idTokenDecrypted = idpJwe.decryptJwt(encKey.getIdentity().getPrivateKey());
+    final JsonWebToken idTokenDecrypted =
+        idpJwe.decryptJwt(encPrivKey.getIdentity().getPrivateKey());
 
     verifyIdToken(idTokenDecrypted);
 
@@ -365,7 +366,7 @@ public class AuthorizationController {
 
   private String createClientAssertion(final String serverUrl, final String sekIdpAuthEndpoint) {
     return JwtHelper.signJson(
-        jwtProcessorSigKey,
+        jwtProcessorEsSigPrivKey,
         objectMapper,
         clientAssertionBuilder.buildClientAssertion(serverUrl, sekIdpAuthEndpoint),
         "JWT");
