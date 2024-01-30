@@ -40,6 +40,7 @@ import static de.gematik.idp.field.ClaimName.TOKEN_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.idp.data.FederationPrivKey;
+import de.gematik.idp.data.FederationPubKey;
 import de.gematik.idp.token.IdpJwe;
 import de.gematik.idp.token.JsonWebToken;
 import java.security.Key;
@@ -55,8 +56,8 @@ class AuthorizationCodeBuilderTest {
 
   @Autowired AuthorizationCodeBuilder authorizationCodeBuilder;
   @Autowired Key symmetricEncryptionKey;
-  @Autowired FederationPrivKey sigKey;
-  @Autowired FederationPrivKey tokenKey;
+  @Autowired FederationPrivKey esSigPrivKey;
+  @Autowired FederationPubKey tokenSigPubKey;
 
   // ID_TOKEN, expiration not in scope
   static final String SEKTORALER_ID_TOKEN =
@@ -80,7 +81,7 @@ class AuthorizationCodeBuilderTest {
             new JsonWebToken(SEKTORALER_ID_TOKEN), ZonedDateTime.now(), authSession);
     final JsonWebToken decryptedAuthCode =
         encryptedAuthCode.decryptNestedJwt(symmetricEncryptionKey);
-    decryptedAuthCode.verify(tokenKey.getIdentity().getCertificate().getPublicKey());
+    decryptedAuthCode.verify(tokenSigPubKey.getPublicKey().orElseThrow());
   }
 
   @Test

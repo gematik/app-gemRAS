@@ -30,14 +30,14 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class FlowBeanCreation {
 
-  private final IdpJwtProcessor jwtProcessorTokenKey;
+  private final IdpJwtProcessor jwtProcessorTokenSigPrivKey;
   private final Key symmetricEncryptionKey;
   private final ServerUrlService serverUrlService;
 
   @Bean
   public AuthorizationCodeBuilder authorizationCodeBuilder() {
     return new AuthorizationCodeBuilder(
-        jwtProcessorTokenKey, symmetricEncryptionKey, serverUrlService.determineServerUrl());
+        jwtProcessorTokenSigPrivKey, symmetricEncryptionKey, serverUrlService.determineServerUrl());
   }
 
   @Bean

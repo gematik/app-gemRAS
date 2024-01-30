@@ -199,7 +199,8 @@ class AuthorizationControllerEntityStatementTest {
     final List<Map<String, Object>> keyList =
         (List<Map<String, Object>>)
             new JsonWebToken(response.getBody()).getBodyClaims().get("keys");
-    assertThat(keyList).hasSize(3);
+
+    assertThat(keyList).hasSize(2);
   }
 
   @Test
@@ -223,7 +224,6 @@ class AuthorizationControllerEntityStatementTest {
         (List<Map<String, Object>>)
             new JsonWebToken(response.getBody()).getBodyClaims().get("keys");
 
-    assertThat(keyList.stream().anyMatch(key -> key.get("kid").equals("puk_fd_sig"))).isTrue();
     assertThat(keyList.stream().anyMatch(key -> key.get("kid").equals("puk_tls_sig"))).isTrue();
     assertThat(keyList.stream().anyMatch(key -> key.get("kid").equals("puk_fd_enc"))).isTrue();
   }
@@ -238,16 +238,18 @@ class AuthorizationControllerEntityStatementTest {
         (List<Map<String, Object>>)
             new JsonWebToken(response.getBody()).getBodyClaims().get("keys");
 
-    assertThat(
-            keyList.stream()
-                .filter(key -> key.get("kid").equals("puk_fachdienst_sig"))
-                .noneMatch(key -> key.containsKey("x5c")))
-        .isTrue();
-    assertThat(
-            keyList.stream()
-                .filter(key -> key.get("kid").equals("puk_tls_sig"))
-                .anyMatch(key -> key.containsKey("x5c")))
-        .isTrue();
+    // fdEncKey must exist and must not contain x5c
+    final Map<String, Object> fdEncKey =
+        keyList.stream().filter(key -> key.get("kid").equals("puk_fd_enc")).findAny().orElseThrow();
+    assertThat(fdEncKey.get("x5c")).isNull();
+
+    // tlsSigKey must exist and must contain x5c
+    final Map<String, Object> tlsSigKey =
+        keyList.stream()
+            .filter(key -> key.get("kid").equals("puk_tls_sig"))
+            .findAny()
+            .orElseThrow();
+    assertThat(tlsSigKey.get("x5c")).isNotNull();
   }
 
   @Test

@@ -15,7 +15,7 @@
               <groupId>org.projectlombok</groupId>
             </exclude>
           </excludes>
-          
+
         </configuration>
         <groupId>org.springframework.boot</groupId>
       </plugin>
@@ -117,7 +117,7 @@
     <dependency>
       <artifactId>mockito-core</artifactId>
       <groupId>org.mockito</groupId>
-      <version>5.8.0</version>
+      <version>5.9.0</version>
     </dependency>
     <dependency>
       <artifactId>mockserver-spring-test-listener</artifactId>
@@ -174,13 +174,13 @@
     <artifactId>gras-global</artifactId>
     <groupId>de.gematik.idp</groupId>
     <relativePath>../pom.xml</relativePath>
-    <version>3.0.2</version>
+    <version>4.0.0</version>
   </parent>
 
   <properties>
     <commit_hash>undefined</commit_hash>
   </properties>
 
-  <version>3.0.2</version>
+  <version>4.0.0</version>
 
 </project>

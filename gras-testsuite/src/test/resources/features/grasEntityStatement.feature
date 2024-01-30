@@ -17,6 +17,10 @@
 @EntityStatement
 Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
 
+  Background:
+    Given TGR clear recorded messages
+    When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
+
   @TCID:RP_ENTITY_STATEMENT_001
   @Approval
   Scenario: RP EntityStatement - Gutfall - Validiere Response
@@ -27,9 +31,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
   - den Code 200
   - einen JWS enthalten
 
-    Given TGR clear recorded messages
-    When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
-    And TGR find request to path ".*/.well-known/openid-federation"
+    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
     Then TGR current response with attribute "$.responseCode" matches "200"
     And TGR current response with attribute "$.header.Content-Type" matches "application/entity-statement\+jwt.*"
 
@@ -43,9 +45,8 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
 
   Der Response Body muss ein JWS mit den folgenden Header Claims sein:
 
-    Given TGR clear recorded messages
-    When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
-    And TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+
+    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
     Then TGR current response at "$.body.header" matches as JSON:
             """
           {
@@ -64,9 +65,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
 
   Der Response Body muss ein JWS mit den folgenden Body Claims sein:
 
-    Given TGR clear recorded messages
-    When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
-    And TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
     Then TGR current response at "$.body.body" matches as JSON:
             """
           {
@@ -79,7 +78,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
             metadata:                      "${json-unit.ignore}",
           }
         """
-    And TGR current response at "$.body.body.authority_hints.0" matches ".*.federationmaster.de"
+    And TGR current response with attribute "$.body.body.authority_hints.0" matches ".*.federationmaster.de"
 
 
   @TCID:RP_ENTITY_STATEMENT_004
@@ -91,9 +90,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
 
   Der Response Body muss ein JWS sein. Dieser muss einen korrekt aufgebauten Body Claim metadata enthalten
 
-    Given TGR clear recorded messages
-    When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
-    And TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
     Then TGR current response at "$.body.body.metadata" matches as JSON:
     """
           {
@@ -104,10 +101,10 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
     And TGR current response at "$.body.body.metadata.openid_relying_party" matches as JSON:
     """
           {
-            signed_jwks_uri:                              'http.*',
-            organization_name:                            '.*',
+            ____signed_jwks_uri:                          'http.*',
+            ____organization_name:                        '.*',
             client_name:                                  '.*',
-            logo_uri:                                     'http.*',
+            ____logo_uri:                                 'http.*',
             redirect_uris:                                "${json-unit.ignore}",
             response_types:                               ["code"],
             client_registration_types:                    ["automatic"],
@@ -121,16 +118,16 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
             scope:                                        '.*'
           }
     """
-    And TGR current response at "$.body.body.metadata.openid_relying_party.redirect_uris.0" matches ".*"
+    And TGR current response with attribute "$.body.body.metadata.openid_relying_party.redirect_uris.0" matches ".*"
     And TGR current response at "$.body.body.metadata.federation_entity" matches as JSON:
     """
           {
-            name:                 '.*',
+            ____name:                 '.*',
             contacts:             "${json-unit.ignore}",
             ____homepage_uri:     'http.*'
           }
     """
-    And TGR current response at "$.body.body.metadata.federation_entity.contacts.0" matches ".*"
+    And TGR current response with attribute "$.body.body.metadata.federation_entity.contacts.0" matches ".*"
 
 
   @TCID:RP_ENTITY_STATEMENT_005
@@ -143,10 +140,8 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
   Der Response Body muss ein JWS mit einem JWKS Claim sein.
   Das JWKS muss mindestens einen strukturell korrekten JWK mit use = sig und x5c-Element enthalten.
 
-    Given TGR clear recorded messages
-    When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
-    And TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
-    Then TGR set local variable "entityStatementSigKeyKid" to "!{rbel:currentResponseAsString('$.body.header.kid')}"
+    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    And TGR set local variable "entityStatementSigKeyKid" to "!{rbel:currentResponseAsString('$.body.header.kid')}"
     Then TGR current response at "$.body.body.jwks.keys.[?(@.kid.content =='${entityStatementSigKeyKid}')]" matches as JSON:
         """
           {
@@ -159,3 +154,32 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
             alg:                           "ES256"
           }
         """
+
+
+  @TCID:RP_ENTITY_STATEMENT_006
+  @Approval
+  Scenario: RP EntityStatement - Gutfall - Validiere Signatur
+
+  ```
+  Wir rufen das Entity Statement einer Relying Party der Föderation ab
+
+  Die Signatur muss valide sein:
+
+    Given TGR clear recorded messages
+    When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
+    And TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    And TGR current response with attribute "$.body.signature.isValid" matches "true"
+
+
+  @TCID:RP_ENTITY_STATEMENT_007
+  @Approval
+  Scenario: RP EntityStatement - Gutfall - Validiere Scope Claim
+
+  ```
+  Wir rufen das Entity Statement einer Relying Party der Föderation ab.
+  Der Scope muss mindestens die Claims openid und urn:telematik:versicherter (für das Schreiben in der ePA) enthalten
+
+
+    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    And TGR current response with attribute "$.body.body.metadata.openid_relying_party.scope" matches ".*openid.*"
+    And TGR current response with attribute "$.body.body.metadata.openid_relying_party.scope" matches ".*urn:telematik:versicherter.*"

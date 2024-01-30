@@ -38,9 +38,11 @@ class FdAuthServerConfigurationTest {
   void fullIntTestComponent() {
     assertThat(fdAuthServerConfiguration).isNotNull();
     assertThat(fdAuthServerConfiguration.getServerUrl()).isNotNull();
-    assertThat(fdAuthServerConfiguration.getSigKeyConfig()).isNotNull();
-    assertThat(fdAuthServerConfiguration.getEncKeyConfig()).isNotNull();
-    assertThat(fdAuthServerConfiguration.getTlsClientKeyConfig()).isNotNull();
+    assertThat(fdAuthServerConfiguration.getEsSigPrivKeyConfig()).isNotNull();
+    assertThat(fdAuthServerConfiguration.getEsSigPubKeyConfig()).isNotNull();
+    assertThat(fdAuthServerConfiguration.getEncPrivKeyConfig()).isNotNull();
+    assertThat(fdAuthServerConfiguration.getEncPubKeyConfig()).isNotNull();
+    assertThat(fdAuthServerConfiguration.getTlsClientPrivKeyConfig()).isNotNull();
     assertThat(fdAuthServerConfiguration.getFedmasterUrl()).isNotNull();
   }
 
@@ -49,17 +51,29 @@ class FdAuthServerConfigurationTest {
     final FdAuthServerConfiguration rasConfig =
         FdAuthServerConfiguration.builder()
             .serverUrl("serverurl")
-            .sigKeyConfig(new KeyConfig("a", "b", "c", false))
-            .encKeyConfig(new KeyConfig("d", "e", "f", false))
-            .tlsClientKeyConfig(new KeyConfig("g", "h", "i", false))
+            .esSigPrivKeyConfig(new KeyConfig("a", "b", "c", false))
+            .esSigPubKeyConfig(new KeyConfig("a", "b", "c", false))
+            .encPrivKeyConfig(new KeyConfig("d", "e", "f", false))
+            .encPubKeyConfig(new KeyConfig("d", "e", "f", false))
+            .tlsClientPrivKeyConfig(new KeyConfig("g", "h", "i", false))
+            .tokenSigPrivKeyConfig(new KeyConfig("j", "k", "l", false))
+            .tokenSigPubKeyConfig(new KeyConfig("j", "k", "l", false))
+            .symmetricEncryptionKey("dummyKey")
             .fedmasterUrl("feddi")
             .clientId("dummyClient")
             .build();
     rasConfig.setServerUrl("newUrl");
     assertThat(rasConfig).isNotNull();
     assertThat(rasConfig.getServerUrl()).isEqualTo("newUrl");
-    assertThat(rasConfig.getSigKeyConfig()).isNotNull();
-    assertThat(rasConfig.getEncKeyConfig()).isNotNull();
+    assertThat(rasConfig.getEsSigPrivKeyConfig()).isNotNull();
+    assertThat(rasConfig.getEsSigPubKeyConfig()).isNotNull();
+    assertThat(rasConfig.getEncPrivKeyConfig()).isNotNull();
+    assertThat(rasConfig.getEncPubKeyConfig()).isNotNull();
+    assertThat(rasConfig.getTlsClientPrivKeyConfig()).isNotNull();
+    assertThat(rasConfig.getTokenSigPrivKeyConfig()).isNotNull();
+    assertThat(rasConfig.getTokenSigPubKeyConfig()).isNotNull();
+    assertThat(rasConfig.getSymmetricEncryptionKey()).isNotNull();
+    assertThat(rasConfig.getFedmasterUrl()).isNotNull();
     assertThat(rasConfig.toString()).hasSizeGreaterThan(0);
     assertThat(rasConfig).isNotEqualTo(fdAuthServerConfiguration);
 
@@ -67,7 +81,7 @@ class FdAuthServerConfigurationTest {
     final FdAuthServerConfiguration rasConfig2 = rasConfig;
     assertThat(rasConfig).isEqualTo(rasConfig2);
 
-    assertThatThrownBy(() -> new KeyConfiguration(resourceLoader, rasConfig).sigKey())
+    assertThatThrownBy(() -> new KeyConfiguration(resourceLoader, rasConfig).esSigPrivKey())
         .isInstanceOf(FdAuthServerException.class);
   }
 }
