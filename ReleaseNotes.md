@@ -1,3 +1,9 @@
+# Release 4.0.1
+
+- switch to docker base image eclipse-temurin:17-jre
+- rename docker images
+- update dependencies
+
 # Release 4.0.0
 
 - refactor key handling, use PrivateKey instead of p12 container when certificate is not required
