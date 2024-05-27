@@ -86,6 +86,7 @@ public class EntityStatementBuilder {
             .logoUri(serverUrl + "/noLogoYet")
             .redirectUris(
                 new String[] {
+                  "http://127.0.0.1:8084/auth",
                   "https://Fachdienst007.de/client",
                   "https://redirect.testsuite.gsi",
                   "https://idpfadi.dev.gematik.solutions/auth"

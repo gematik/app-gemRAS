@@ -2,12 +2,110 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <artifactId>gras-global</artifactId>
+    <groupId>de.gematik.idp</groupId>
+    <relativePath>../pom.xml</relativePath>
+    <version>4.1.1</version>
+  </parent>
+
   <artifactId>gra-server</artifactId>
+  <version>4.1.1</version>
+  <packaging>jar</packaging>
+
+  <name>gra-server</name>
+  <description>Gematik Reference Authorization Server</description>
+
+  <properties>
+    <commit_hash>undefined</commit_hash>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <artifactId>lombok</artifactId>
+      <groupId>org.projectlombok</groupId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+      <groupId>org.springframework.boot</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-jersey</artifactId>
+      <groupId>org.springframework.boot</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-validation</artifactId>
+      <groupId>org.springframework.boot</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>mockito-core</artifactId>
+      <groupId>org.mockito</groupId>
+      <version>5.12.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>mockserver-spring-test-listener</artifactId>
+      <groupId>org.mock-server</groupId>
+      <version>5.15.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <artifactId>idp-commons</artifactId>
+      <groupId>de.gematik.idp</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <groupId>org.springframework.boot</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-webmvc</artifactId>
+      <groupId>org.springframework</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>unirest-java</artifactId>
+      <groupId>com.konghq</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>jakarta.validation-api</artifactId>
+      <groupId>jakarta.validation</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>jakarta.annotation-api</artifactId>
+      <groupId>jakarta.annotation</groupId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+    </dependency>
+    <dependency>
+      <artifactId>log4j-api</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>log4j-core</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
       <plugin>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${version.spring-boot-maven-plugin}</version>
         <configuration>
           <excludes>
             <exclude>
@@ -84,103 +182,5 @@
       </plugin>
     </plugins>
   </build>
-
-  <dependencies>
-    <dependency>
-      <artifactId>lombok</artifactId>
-      <groupId>org.projectlombok</groupId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <artifactId>spring-boot-starter-actuator</artifactId>
-      <groupId>org.springframework.boot</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>spring-boot-starter-jersey</artifactId>
-      <groupId>org.springframework.boot</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>spring-boot-starter-validation</artifactId>
-      <groupId>org.springframework.boot</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>spring-boot-configuration-processor</artifactId>
-      <groupId>org.springframework.boot</groupId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <groupId>org.springframework.boot</groupId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <artifactId>mockito-core</artifactId>
-      <groupId>org.mockito</groupId>
-      <version>5.11.0</version>
-    </dependency>
-    <dependency>
-      <artifactId>mockserver-spring-test-listener</artifactId>
-      <groupId>org.mock-server</groupId>
-      <version>5.15.0</version>
-    </dependency>
-    <dependency>
-      <artifactId>idp-commons</artifactId>
-      <groupId>de.gematik.idp</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>idp-test</artifactId>
-      <groupId>de.gematik.idp</groupId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <artifactId>spring-boot-starter-web</artifactId>
-      <groupId>org.springframework.boot</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>spring-webmvc</artifactId>
-      <groupId>org.springframework</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>unirest-java</artifactId>
-      <groupId>com.konghq</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>jakarta.validation-api</artifactId>
-      <groupId>jakarta.validation</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>jakarta.annotation-api</artifactId>
-      <groupId>jakarta.annotation</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>log4j-api</artifactId>
-      <groupId>org.apache.logging.log4j</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>log4j-core</artifactId>
-      <groupId>org.apache.logging.log4j</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>log4j-slf4j2-impl</artifactId>
-      <groupId>org.apache.logging.log4j</groupId>
-    </dependency>
-  </dependencies>
-  <description>Gematik Reference Authorization Server</description>
-  <modelVersion>4.0.0</modelVersion>
-  <name>gra-server</name>
-
-  <parent>
-    <artifactId>gras-global</artifactId>
-    <groupId>de.gematik.idp</groupId>
-    <relativePath>../pom.xml</relativePath>
-    <version>4.0.1</version>
-  </parent>
-
-  <properties>
-    <commit_hash>undefined</commit_hash>
-  </properties>
-
-  <version>4.0.1</version>
 
 </project>

@@ -1,3 +1,11 @@
+# Release 4.1.1
+- update dependencies
+- improve logging (line numbers)
+- remove parent pom from testsuite to avoid dependency conflicts
+- add local redirect_uri to entity statement
+- refactor keys
+- implements https://github.com/gematik/app-gemRAS/issues/6
+
 # Release 4.0.1
 
 - switch to docker base image eclipse-temurin:17-jre
