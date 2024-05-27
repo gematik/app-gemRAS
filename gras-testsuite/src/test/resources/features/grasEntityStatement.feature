@@ -78,6 +78,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
             metadata:                      "${json-unit.ignore}",
           }
         """
+    And current response with attributes iat and exp to be of type Long and iat < exp
     And TGR current response with attribute "$.body.body.authority_hints.0" matches ".*.federationmaster.de"
 
 

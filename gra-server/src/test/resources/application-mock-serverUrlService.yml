@@ -37,7 +37,7 @@ fd-auth-server:
   fedmasterSigPubKeyFilePath: "keys/ref-fedmaster-sig-pubkey.pem"
   debug:
     requestLogging: true
-  loglevel: debug
+  loglevel: info
 server:
   port: ${SERVER_PORT:8084}
 management:

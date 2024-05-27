@@ -107,6 +107,13 @@ public class KeyConfiguration implements KeyConfigurationBase {
         DigestUtils.sha256(fdAuthServerConfiguration.getSymmetricEncryptionKey()), "AES");
   }
 
+  @Bean
+  public PublicKey fedmasterSigKey() throws IOException {
+    return KeyUtility.readX509PublicKey(
+        ResourceReader.getFileFromResourceAsTmpFile(
+            fdAuthServerConfiguration.getFedmasterSigPubKeyFilePath()));
+  }
+
   private FederationPrivKey getFederationPrivKey(final KeyConfig keyConfiguration) {
     try {
       final PrivateKey privateKey =

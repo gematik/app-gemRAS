@@ -17,7 +17,6 @@
 package de.gematik.idp.graserver.services;
 
 import de.gematik.idp.IdpConstants;
-import de.gematik.idp.crypto.CryptoLoader;
 import de.gematik.idp.graserver.ServerUrlService;
 import de.gematik.idp.graserver.exceptions.FdAuthServerException;
 import de.gematik.idp.token.JsonWebToken;
@@ -44,6 +43,7 @@ public class EntityStmntIdpsService {
 
   private final ResourceReader resourceReader;
   private final ServerUrlService serverUrlService;
+  private final PublicKey fedmasterSigKey;
 
   /** Entity statements of Idp-Sektorals. Delivered by respective Idp-Sektoral. */
   private static final Map<String, JsonWebToken> ENTITY_STATEMENTS_IDP = new HashMap<>();
@@ -66,7 +66,7 @@ public class EntityStmntIdpsService {
   }
 
   public JsonWebToken getEntityStatementIdp(final String issuer) {
-    log.info("Entitystatement for IDP [{}] requested.", issuer);
+    log.info("Entitystatement for IDP {} requested.", issuer);
     updateStatementIdpIfExpiredAndNewIsAvailable(issuer);
     return ENTITY_STATEMENTS_IDP.get(issuer);
   }
@@ -181,7 +181,8 @@ public class EntityStmntIdpsService {
             .asString();
     if (resp.getStatus() == HttpStatus.OK.value()) {
       final JsonWebToken entityStatementAboutIdp = new JsonWebToken(resp.getBody());
-      entityStatementAboutIdp.verify(getFedmasterSigKey());
+      log.debug("EntityStatementAboutIdp: {}", entityStatementAboutIdp.getRawString());
+      entityStatementAboutIdp.verify(fedmasterSigKey);
       ENTITY_STATEMENTS_FEDMASTER_ABOUT_IDP.put(sub, entityStatementAboutIdp);
     } else {
       log.info(resp.getBody());
@@ -195,12 +196,5 @@ public class EntityStmntIdpsService {
               + HttpStatus.valueOf(resp.getStatus()),
           HttpStatus.BAD_REQUEST);
     }
-  }
-
-  // TODO: read from file with public key only
-  private PublicKey getFedmasterSigKey() {
-    return CryptoLoader.getCertificateFromPem(
-            resourceReader.getFileFromResourceAsBytes("cert/fedmaster-sig-TU.pem"))
-        .getPublicKey();
   }
 }
