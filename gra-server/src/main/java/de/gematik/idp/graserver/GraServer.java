@@ -52,9 +52,9 @@ public class GraServer {
     final String loglevel = fdAuthServerConfiguration.getLoglevel();
     final String loggerServer = "de.gematik.idp.graserver";
     final String loggerRequests = "org.springframework.web.filter.CommonsRequestLoggingFilter";
-    log.info("fdAuthServerConfiguration.getLoglevel(): {}", loglevel);
     Configurator.setLevel(loggerServer, loglevel);
     Configurator.setLevel(loggerRequests, loglevel);
+    log.info("fdAuthServerConfiguration: {}", fdAuthServerConfiguration);
 
     final LoggerContext loggerContext =
         LoggerContext.getContext(StackLocatorUtil.getCallerClassLoader(2), false, null);
