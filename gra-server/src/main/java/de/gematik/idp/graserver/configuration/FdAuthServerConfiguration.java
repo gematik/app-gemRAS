@@ -44,6 +44,7 @@ public class FdAuthServerConfiguration {
   private KeyConfig encPrivKeyConfig;
   private KeyConfig encPubKeyConfig;
   private KeyConfig tlsClientPrivKeyConfig;
+  private KeyConfig tlsClientPrivKeyRotationConfig;
   private String symmetricEncryptionKey;
   private String fedmasterUrl;
   private String fedmasterSigPubKeyFilePath;

@@ -16,6 +16,7 @@
 
 package de.gematik.idp.graserver.data;
 
+import static de.gematik.idp.field.ClaimName.AUTHENTICATION_CLASS_REFERENCE;
 import static de.gematik.idp.field.ClaimName.AUTHENTICATION_METHODS_REFERENCE;
 import static de.gematik.idp.field.ClaimName.AUTH_TIME;
 import static de.gematik.idp.field.ClaimName.CLIENT_ID;
@@ -61,7 +62,7 @@ class AuthorizationCodeBuilderTest {
 
   // ID_TOKEN, expiration not in scope
   static final String SEKTORALER_ID_TOKEN =
-      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InB1a19mZWRfaWRwX3Rva2VuIn0.eyJzdWIiOiJYMTEwNDExNjc1LWh0dHA6Ly9sb2NhbGhvc3Q6ODA4NSIsInVybjp0ZWxlbWF0aWs6Y2xhaW1zOmlkIjoiWDExMDQxMTY3NSIsInVybjp0ZWxlbWF0aWs6Y2xhaW1zOm9yZ2FuaXphdGlvbiI6IjEwOTUwMDk2OSIsImFtciI6InVybjp0ZWxlbWF0aWs6YXV0aDplSUQiLCJpc3MiOiJodHRwczovL2dzaS5kZXYuZ2VtYXRpay5zb2x1dGlvbnMiLCJ1cm46dGVsZW1hdGlrOmNsYWltczpkaXNwbGF5X25hbWUiOiJEYXJpdXMgTWljaGFlbCBCcmlhbiBVYmJvIEdyYWYgdm9uIELDtmRlZmVsZCIsIm5vbmNlIjoiNDIiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjgwODUiLCJhY3IiOiJnZW1hdGlrLWVoZWFsdGgtbG9hLWhpZ2giLCJ1cm46dGVsZW1hdGlrOmNsYWltczpwcm9mZXNzaW9uIjoiMS4yLjI3Ni4wLjc2LjQuNDkiLCJleHAiOjE2OTAxODc4NTgsImlhdCI6MTY5MDE4NzU1OH0.1MLlGiBynPAptNl8AaAYbpJfH1dvLzeoGmEULG4MuEtVZYFoJRj_KHQOfIrWTmOrvE6rrkzM6HjPaVkUDKuKzg";
+      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InB1a19mZWRfaWRwX3Rva2VuIn0.eyJzdWIiOiJYMTEwNDExNjc1LWh0dHBzOi8vaWRwZmFkaS5kZXYuZ2VtYXRpay5zb2x1dGlvbnMiLCJhdWQiOiJodHRwczovL2lkcGZhZGkuZGV2LmdlbWF0aWsuc29sdXRpb25zIiwiYWNyIjoiZ2VtYXRpay1laGVhbHRoLWxvYS1oaWdoIiwidXJuOnRlbGVtYXRpazpjbGFpbXM6cHJvZmVzc2lvbiI6IjEuMi4yNzYuMC43Ni40LjQ5IiwidXJuOnRlbGVtYXRpazpjbGFpbXM6aWQiOiJYMTEwNDExNjc1IiwidXJuOnRlbGVtYXRpazpjbGFpbXM6b3JnYW5pemF0aW9uIjoiMTA5NTAwOTY5IiwiYW1yIjpbInVybjp0ZWxlbWF0aWs6YXV0aDplR0siXSwiaXNzIjoiaHR0cHM6Ly9nc2kuZGV2LmdlbWF0aWsuc29sdXRpb25zIiwiZXhwIjoxNzMxNDMxMTI4LCJ1cm46dGVsZW1hdGlrOmNsYWltczpkaXNwbGF5X25hbWUiOiJEYXJpdXMgTWljaGFlbCBCcmlhbiBVYmJvIEdyYWYgdm9uIELDtmRlZmVsZCIsImlhdCI6MTczMTQzMDgyOCwibm9uY2UiOiJlY2JkZTY0NjQyYWViNzdkMWUzYmY4NDkzZWYwZTRmNCJ9.vAL-7KCjM3vtEuCPRKvUixw3SVDF3-T57ovCmH84lRp-9lxXzrHx3V5_a9-jvPsg6bO6XiTf3MiN_BIzYidfOw";
 
   @Test
   void buildAuthorizationcodeFromSektoralIdTokenTest() {
@@ -124,9 +125,13 @@ class AuthorizationCodeBuilderTest {
             ISSUER.getJoseName(),
             JWT_ID.getJoseName(),
             AUTHENTICATION_METHODS_REFERENCE.getJoseName(),
+            AUTHENTICATION_CLASS_REFERENCE.getJoseName(),
             GIVEN_NAME.getJoseName(),
             FAMILY_NAME.getJoseName());
     assertThat(decryptedAuthCode.getBodyClaim(GIVEN_NAME)).contains("");
     assertThat(decryptedAuthCode.getBodyClaim(FAMILY_NAME)).contains("");
+    assertThat(decryptedAuthCode.getBodyClaim(AUTHENTICATION_METHODS_REFERENCE))
+        .get()
+        .isInstanceOf(String.class);
   }
 }

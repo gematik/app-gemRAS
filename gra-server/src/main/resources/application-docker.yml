@@ -13,11 +13,6 @@ fd-auth-server:
     keyId: puk_tls_sig
     use: sig
     x5cInJwks: true
-  tlsClientPrivKeyRotationConfig:
-    fileName: classpath:cert/ref-key-rotation.p12
-    keyId: puk_tls_sig_rotation
-    use: sig
-    x5cInJwks: true
   encPrivKeyConfig:
     fileName: keys/ref-privkey.pem
     keyId: puk_fd_enc
@@ -37,8 +32,8 @@ fd-auth-server:
     keyId: puk_token_sig
     use: sig
   symmetricEncryptionKey: "setYourKeyHere"
-  serverUrl: "${FD_AUTH_SERVER_URL:http://127.0.0.1:8084}"
-  fedmasterUrl: "${FEDMASTER_SERVER_URL:http://127.0.0.1:8083}"
+  serverUrl: "${FD_AUTH_SERVER_URL:http://set-address-here}"
+  fedmasterUrl: "${FEDMASTER_SERVER_URL:http://set-address-here}"
   fedmasterSigPubKeyFilePath: "keys/ref-fedmaster-sig-pubkey.pem"
   debug:
     requestLogging: true
