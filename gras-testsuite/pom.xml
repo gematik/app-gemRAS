@@ -6,49 +6,49 @@
 
   <groupId>de.gematik.idp</groupId>
   <artifactId>gras-testsuite</artifactId>
-  <version>4.1.2</version>
+  <version>5.0.1</version>
   <packaging>jar</packaging>
   <description>Testsuite fuer authorization server</description>
 
   <properties>
-    <version.java>17</version.java>
+    <java.version>21</java.version>
     <version.maven-compiler-plugin>3.13.0</version.maven-compiler-plugin>
-    <version.maven-enforcer-plugin>3.4.1</version.maven-enforcer-plugin>
-    <version.maven-failsafe-plugin>3.2.5</version.maven-failsafe-plugin>
-    <version.maven-surefire-plugin>3.2.5</version.maven-surefire-plugin>
-    <version.spotless-maven-plugin>2.43.0</version.spotless-maven-plugin>
-    <version.spotless.google-java-format>1.16.0</version.spotless.google-java-format>
-    <version.tiger>3.0.4</version.tiger>
+    <version.maven-enforcer-plugin>3.5.0</version.maven-enforcer-plugin>
+    <version.maven-failsafe-plugin>3.5.2</version.maven-failsafe-plugin>
+    <version.maven-surefire-plugin>3.5.2</version.maven-surefire-plugin>
+    <version.slf4j-api>2.0.16</version.slf4j-api>
+    <version.spotless-maven-plugin>2.44.0</version.spotless-maven-plugin>
+    <version.spotless.google-java-format>1.17.0</version.spotless.google-java-format>
+    <version.tiger>3.4.7</version.tiger>
   </properties>
 
   <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.5.16</version>
+      </dependency>
+    </dependencies>
   </dependencyManagement>
 
   <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${version.slf4j-api}</version>
+    </dependency>
     <dependency>
       <groupId>de.gematik.test</groupId>
       <artifactId>tiger-test-lib</artifactId>
       <version>${version.tiger}</version>
       <scope>test</scope>
-    </dependency>
-    <!-- needed for support of junit5  driver classes -->
-    <dependency>
-      <groupId>org.junit.platform</groupId>
-      <artifactId>junit-platform-suite</artifactId>
-      <version>1.10.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.cucumber</groupId>
-      <artifactId>cucumber-junit-platform-engine</artifactId>
-      <version>7.17.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>5.11.0-M2</version>
-      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
@@ -61,8 +61,8 @@
           <version>${version.maven-compiler-plugin}</version>
           <configuration>
             <encoding>${project.build.sourceEncoding}</encoding>
-            <source>${version.java}</source>
-            <target>${version.java}</target>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
             <debug>true</debug>
           </configuration>
         </plugin>
@@ -83,8 +83,8 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <message>Java version should be ${version.java}.</message>
-                  <version>${version.java}</version>
+                  <message>Java version should be ${java.version}.</message>
+                  <version>${java.version}</version>
                 </requireJavaVersion>
               </rules>
             </configuration>

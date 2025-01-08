@@ -17,6 +17,7 @@
 package de.gematik.idp.graserver;
 
 import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STATEMENT_FED_MASTER;
+import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043_JWT;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -69,5 +70,10 @@ class ServerUrlServiceTest {
     fdAuthServerConfiguration.setFedmasterUrl(mockServerUrl);
     assertThat(serverUrlService.determineFetchEntityStatementEndpoint())
         .isEqualTo("https://app-ref.federationmaster.de/federation/fetch");
+  }
+
+  @Test
+    void testDetermineSignedJwksUri() {
+      assert(serverUrlService.determineSignedJwksUri(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043_JWT).orElseThrow()).equals("http://localhost:8085/jws.json");
   }
 }

@@ -22,8 +22,8 @@ import de.gematik.idp.token.JsonWebToken;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -94,4 +94,16 @@ public class ServerUrlService {
     return Optional.ofNullable(fdAuthServerConfiguration.getServerUrl())
         .filter(StringUtils::isNotBlank);
   }
+
+    public Optional<String> determineSignedJwksUri(final JsonWebToken entityStmnt) {
+        final Map<String, Object> bodyClaims = entityStmnt.getBodyClaims();
+        final Map<String, Object> metadata =
+                Objects.requireNonNull(
+                        (Map<String, Object>) bodyClaims.get("metadata"), "missing claim: metadata");
+        final Map<String, Object> openidRelyingParty =
+                Objects.requireNonNull(
+                        (Map<String, Object>) metadata.get("openid_provider"),
+                        "missing claim: openid_provider");
+        return Optional.ofNullable((String) openidRelyingParty.getOrDefault("signed_jwks_uri", null));
+    }
 }

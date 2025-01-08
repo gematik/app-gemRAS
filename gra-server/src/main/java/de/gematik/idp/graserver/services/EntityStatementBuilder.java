@@ -33,15 +33,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 public class EntityStatementBuilder {
 
-  private static final int ENTITY_STATEMENT_TTL_DAYS = 1;
-  private static final int ENTITY_STATEMENT_EXPIRED_DAYS_IN_PAST = 2;
+  private static final int ENTITY_STATEMENT_TTL_HOURS = 2;
+  private static final int ENTITY_STATEMENT_EXPIRED_HOURS_IN_PAST = 4;
   @Autowired FederationPubKey esSigPubKey;
 
   public EntityStatement buildEntityStatement(final String serverUrl, final String fedmasterUrl) {
     log.debug("build EntityStatement, serverUrl: " + serverUrl);
     final ZonedDateTime currentTime = ZonedDateTime.now();
     return buildEntityStatement(
-        serverUrl, fedmasterUrl, currentTime.plusDays(ENTITY_STATEMENT_TTL_DAYS).toEpochSecond());
+        serverUrl, fedmasterUrl, currentTime.plusHours(ENTITY_STATEMENT_TTL_HOURS).toEpochSecond());
   }
 
   public EntityStatement buildEntityStatement(
@@ -65,10 +65,10 @@ public class EntityStatementBuilder {
     return EntityStatement.builder()
         .exp(
             currentTime
-                .minusDays(ENTITY_STATEMENT_EXPIRED_DAYS_IN_PAST)
-                .plusDays(ENTITY_STATEMENT_TTL_DAYS)
+                .minusHours(ENTITY_STATEMENT_EXPIRED_HOURS_IN_PAST)
+                .plusHours(ENTITY_STATEMENT_TTL_HOURS)
                 .toEpochSecond())
-        .iat(currentTime.minusDays(ENTITY_STATEMENT_EXPIRED_DAYS_IN_PAST).toEpochSecond())
+        .iat(currentTime.minusHours(ENTITY_STATEMENT_EXPIRED_HOURS_IN_PAST).toEpochSecond())
         .iss(serverUrl)
         .sub(serverUrl)
         .jwks(JwtHelper.getJwks(esSigPubKey))
@@ -86,7 +86,7 @@ public class EntityStatementBuilder {
             .logoUri(serverUrl + "/noLogoYet")
             .redirectUris(
                 new String[] {
-                  "http://127.0.0.1:8084/auth",
+                  serverUrl + "/auth",
                   "https://Fachdienst007.de/client",
                   "https://redirect.testsuite.gsi",
                   "https://idpfadi.dev.gematik.solutions/auth"

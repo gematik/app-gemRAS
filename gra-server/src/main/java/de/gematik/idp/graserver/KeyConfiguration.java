@@ -45,6 +45,7 @@ import org.springframework.util.StreamUtils;
 @Configuration
 @RequiredArgsConstructor
 public class KeyConfiguration implements KeyConfigurationBase {
+
   private final ResourceLoader resourceLoader;
 
   private final FdAuthServerConfiguration fdAuthServerConfiguration;
@@ -77,6 +78,12 @@ public class KeyConfiguration implements KeyConfigurationBase {
   @Bean
   public FederationPubKey tlsClientPubKey() {
     return getFederationPubKeyFromP12(fdAuthServerConfiguration.getTlsClientPrivKeyConfig());
+  }
+
+  @Bean
+  public FederationPubKey tlsClientPubKeyRotation() {
+    return getFederationPubKeyFromP12(
+        fdAuthServerConfiguration.getTlsClientPrivKeyRotationConfig());
   }
 
   @Bean

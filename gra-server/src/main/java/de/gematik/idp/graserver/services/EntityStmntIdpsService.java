@@ -25,14 +25,14 @@ import java.security.PublicKey;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
+import java.util.*;
+
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jose4j.jwk.JsonWebKeySet;
+import org.jose4j.lang.JoseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -197,4 +197,22 @@ public class EntityStmntIdpsService {
           HttpStatus.BAD_REQUEST);
     }
   }
+  public JsonWebKeySet getSignedJwksIdp(final String issuer) {
+     final JsonWebToken entityStmntIdp = getEntityStatementIdp(issuer);
+     final Optional<String> signedJwksUri = serverUrlService.determineSignedJwksUri(entityStmntIdp);
+     if (signedJwksUri.isPresent()) {
+         final HttpResponse<String> resp = Unirest.get(signedJwksUri.get()).asString();
+         if (resp.isSuccess()) {
+             // TODO check signature
+             try {
+                 return new JsonWebKeySet(new JsonWebToken(resp.getBody()).getPayloadDecoded());
+             } catch (JoseException e) {
+                 throw new FdAuthServerException(e);
+             }
+         }
+         throw new FdAuthServerException("Error while fetching the IDP's signed_jwks", HttpStatus.INTERNAL_SERVER_ERROR);
+     }
+     throw new FdAuthServerException("No signed_jwks_uri found in IDP entity statement", HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 }
+

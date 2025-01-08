@@ -27,6 +27,7 @@ import de.gematik.idp.crypto.CryptoLoader;
 import de.gematik.idp.exceptions.IdpJwtSignatureInvalidException;
 import de.gematik.idp.field.ClaimName;
 import de.gematik.idp.token.JsonWebToken;
+import jakarta.ws.rs.core.HttpHeaders;
 import java.io.File;
 import java.io.IOException;
 import java.security.PublicKey;
@@ -35,11 +36,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import kong.unirest.HttpResponse;
-import kong.unirest.HttpStatus;
-import kong.unirest.Unirest;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.HttpStatus;
+import kong.unirest.core.Unirest;
 import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -200,7 +200,7 @@ class AuthorizationControllerEntityStatementTest {
         (List<Map<String, Object>>)
             new JsonWebToken(response.getBody()).getBodyClaims().get("keys");
 
-    assertThat(keyList).hasSize(2);
+    assertThat(keyList).hasSize(3);
   }
 
   @Test
