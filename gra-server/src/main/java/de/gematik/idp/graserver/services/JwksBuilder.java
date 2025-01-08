@@ -30,13 +30,14 @@ public class JwksBuilder {
 
   @Autowired FederationPubKey encPubKey;
   @Autowired FederationPubKey tlsClientPubKey;
+  @Autowired FederationPubKey tlsClientPubKeyRotation;
 
   public SignedJwksBody build(final String serverUrl) {
     final ZonedDateTime currentTime = ZonedDateTime.now();
     return SignedJwksBody.builder()
         .iat(currentTime.toEpochSecond())
         .iss(serverUrl)
-        .keys(JwtHelper.getJwks(encPubKey, tlsClientPubKey).getKeys())
+        .keys(JwtHelper.getJwks(encPubKey, tlsClientPubKey, tlsClientPubKeyRotation).getKeys())
         .build();
   }
 }

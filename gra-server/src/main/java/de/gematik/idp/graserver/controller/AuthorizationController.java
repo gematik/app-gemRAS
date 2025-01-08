@@ -28,6 +28,7 @@ import static de.gematik.idp.graserver.Constants.FD_AUTH_SERVER_NONCE_LENGTH;
 import static de.gematik.idp.graserver.Constants.FD_AUTH_SERVER_STATE_LENGTH;
 import static de.gematik.idp.graserver.Constants.FED_SIGNED_JWKS_ENDPOINT;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.idp.authentication.IdpJwtProcessor;
 import de.gematik.idp.crypto.Nonce;
@@ -59,7 +60,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -80,9 +81,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class AuthorizationController {
 
-  public static final int AUTH_CODE_LENGTH = 16;
-
   @Autowired FederationPrivKey encPrivKey;
+  @Autowired FederationPrivKey tlsClientPrivKey;
+
   private static final int NONCE_LENGTH_MAX = 512;
 
   private static final int MAX_AUTH_SESSION_AMOUNT = 10000;
@@ -190,7 +191,6 @@ public class AuthorizationController {
    * Response(out)== message nr.4
    * Parameter "params" is used to filter by HTTP parameters and let spring decide which (multiple mappings of same endpoint) mapping matches.
    */
-  @SneakyThrows
   @GetMapping(value = FED_AUTH_ENDPOINT, params = "redirect_uri")
   public void getRequestUri(
       @RequestParam(name = "client_id") @NotEmpty final String frontendClientId,
@@ -235,30 +235,22 @@ public class AuthorizationController {
         idpIss,
         authSessions.size());
 
-    final String sekIdpAuthEndpoint = getSekIdpAuthEndpointFromEntityStmnt(idpIss);
-    final String sekIdpParEndpoint = getSekIdpParEndpointFromEntityStmnt(idpIss);
-    log.debug("sekIdpAuthEndpoint " + sekIdpAuthEndpoint);
+    final JsonWebToken entityStmntIdp = entityStmntIdpsService.getEntityStatementIdp(idpIss);
+
+    final String sekIdpAuthEndpoint = getSekIdpAuthEndpointFromEntityStmnt(entityStmntIdp);
+    final String sekIdpParEndpoint = getSekIdpParEndpointFromEntityStmnt(entityStmntIdp);
+    log.debug("TX PAR to sekIdpParEndpoint: " + sekIdpParEndpoint);
     /*
-     * Request(out) == message nr.2
+     * Request(out) == message nr.2 (PAR)
      * Response(in) == message nr.3
      */
     final ParResponse respMsgNr3Body =
-        objectMapper.readValue(
-            Unirest.post(sekIdpParEndpoint)
-                .field("client_id", fdAuthServerUrl)
-                .field("state", fdAuthServerState)
-                .field("redirect_uri", fdAuthServerUrl + FED_AUTH_ENDPOINT)
-                .field("code_challenge", fdAuthServerCodeChallenge)
-                .field("code_challenge_method", "S256")
-                .field("response_type", "code")
-                .field("nonce", fdAuthServerNonce)
-                .field("scope", "urn:telematik:display_name urn:telematik:versicherter openid")
-                .field("acr_values", "gematik-ehealth-loa-high")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-                .asString()
-                .getBody(),
-            ParResponse.class);
+        sendPar(
+            sekIdpParEndpoint,
+            fdAuthServerUrl,
+            fdAuthServerState,
+            fdAuthServerCodeChallenge,
+            fdAuthServerNonce);
 
     log.debug("RX message nr.3 at: {}", fdAuthServerUrl);
     /* ParResponse example: {"request_uri":"urn:http://127.0.0.1:8084:4434f963244b9f0f","expires_in":90} */
@@ -274,6 +266,35 @@ public class AuthorizationController {
             sekIdpAuthEndpoint, fdAuthServerUrl, requestUri);
     log.debug("tokenLocation: {}", tokenLocation);
     respMsgNr4.setHeader(HttpHeaders.LOCATION, tokenLocation);
+  }
+
+  private ParResponse sendPar(
+      final String sekIdpParEndpoint,
+      final String fdAuthServerUrl,
+      final String fdAuthServerState,
+      final String fdAuthServerCodeChallenge,
+      final String fdAuthServerNonce) {
+    try {
+      return objectMapper.readValue(
+          Unirest.post(sekIdpParEndpoint)
+              .field("client_id", fdAuthServerUrl)
+              .field("state", fdAuthServerState)
+              .field("redirect_uri", fdAuthServerUrl + FED_AUTH_ENDPOINT)
+              .field("code_challenge", fdAuthServerCodeChallenge)
+              .field("code_challenge_method", "S256")
+              .field("response_type", "code")
+              .field("nonce", fdAuthServerNonce)
+              .field("scope", "urn:telematik:display_name urn:telematik:versicherter openid")
+              .field("acr_values", "gematik-ehealth-loa-high")
+              .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+              .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+              .asString()
+              .getBody(),
+          ParResponse.class);
+    } catch (final JsonProcessingException e) {
+      throw new FdAuthServerException(
+          "Error while parsing PAR response from " + sekIdpParEndpoint, e);
+    }
   }
 
   /* Federation App2App flow
@@ -305,7 +326,9 @@ public class AuthorizationController {
                 () ->
                     new FdAuthServerException(
                         "Content of parameter state is unknown.", HttpStatus.BAD_REQUEST));
-    final String sekIdpTokenEndpoint = getSekIdpTokenEndpointFromEntityStmnt(session.getIdpIss());
+    final String sekIdpTokenEndpoint =
+        getSekIdpTokenEndpointFromEntityStmnt(
+            entityStmntIdpsService.getEntityStatementIdp(session.getIdpIss()));
 
     log.debug("App2App-Flow: TX message nr 10 to {}", sekIdpTokenEndpoint);
     /*
@@ -359,8 +382,7 @@ public class AuthorizationController {
     final String tokenSigKeyId = (String) idToken.getHeaderClaims().get("kid");
     final String iss =
         (String) TokenClaimExtraction.extractClaimsFromJwtBody(idToken.getRawString()).get("iss");
-    final JsonWebToken esIdp = entityStmntIdpsService.getEntityStatementIdp(iss);
-    final JsonWebKeySet jwks = TokenClaimExtraction.extractJwksFromBody(esIdp.getRawString());
+    final JsonWebKeySet jwks = entityStmntIdpsService.getSignedJwksIdp(iss);
     idToken.verify(TokenClaimExtraction.getECPublicKey(jwks, tokenSigKeyId));
   }
 
@@ -372,18 +394,15 @@ public class AuthorizationController {
         "JWT");
   }
 
-  private String getSekIdpAuthEndpointFromEntityStmnt(final String idpIss) {
-    return entityStmntIdpsService.getAuthorizationEndpoint(
-        entityStmntIdpsService.getEntityStatementIdp(idpIss));
+  private String getSekIdpAuthEndpointFromEntityStmnt(final JsonWebToken entityStmnt) {
+    return entityStmntIdpsService.getAuthorizationEndpoint(entityStmnt);
   }
 
-  private String getSekIdpParEndpointFromEntityStmnt(final String idpIss) {
-    return entityStmntIdpsService.getPushedAuthorizationEndpoint(
-        entityStmntIdpsService.getEntityStatementIdp(idpIss));
+  private String getSekIdpParEndpointFromEntityStmnt(final JsonWebToken entityStmnt) {
+    return entityStmntIdpsService.getPushedAuthorizationEndpoint(entityStmnt);
   }
 
-  private String getSekIdpTokenEndpointFromEntityStmnt(final String idpIss) {
-    return entityStmntIdpsService.getTokenEndpoint(
-        entityStmntIdpsService.getEntityStatementIdp(idpIss));
+  private String getSekIdpTokenEndpointFromEntityStmnt(final JsonWebToken entityStmnt) {
+    return entityStmntIdpsService.getTokenEndpoint(entityStmnt);
   }
 }

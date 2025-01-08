@@ -16,12 +16,10 @@
 
 package de.gematik.idp.graserver.services;
 
-import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STATEMENT_FROM_IDP_EXPIRED;
-import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STMNT_ABOUT_IDP_EXPIRED;
-import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043;
-import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043;
+import static de.gematik.idp.graserver.common.TestConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -31,6 +29,7 @@ import de.gematik.idp.graserver.configuration.FdAuthServerConfiguration;
 import de.gematik.idp.graserver.exceptions.FdAuthServerException;
 import de.gematik.idp.token.JsonWebToken;
 import lombok.extern.slf4j.Slf4j;
+import org.jose4j.jwk.JsonWebKeySet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -43,6 +42,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.util.Optional;
 
 @ActiveProfiles("mock-serverUrlService")
 @Slf4j
@@ -180,9 +181,28 @@ class EntityStmntIdpsServiceTest {
   @Test
   void getAuthorizationEndpoint() {
     final String expectedAuthorizationEndpoint = "http://localhost:8085/auth";
+
+    Mockito.doReturn(mockServerUrl + "/federation/fetch")
+        .when(serverUrlService)
+        .determineFetchEntityStatementEndpoint();
+
+    mockServerClient
+        .when(request().withMethod("GET").withPath(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
+        .respond(
+            response()
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON)
+                .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043));
+    mockServerClient
+        .when(request().withMethod("GET").withPath("/federation/fetch"))
+        .respond(
+            response()
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON)
+                .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043));
     assertThat(
             entityStmntIdpsService.getAuthorizationEndpoint(
-                ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043_JWT))
+                entityStmntIdpsService.getEntityStatementIdp(mockServerUrl)))
         .isEqualTo(expectedAuthorizationEndpoint);
   }
 
@@ -191,5 +211,43 @@ class EntityStmntIdpsServiceTest {
     final String expectedTokenEndpoint = "http://localhost:8085/token";
     assertThat(entityStmntIdpsService.getTokenEndpoint(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043_JWT))
         .isEqualTo(expectedTokenEndpoint);
+  }
+
+  @Test
+    void testGetSignedJwksIdp(){
+
+      Mockito.doReturn(mockServerUrl + "/federation/fetch")
+              .when(serverUrlService)
+              .determineFetchEntityStatementEndpoint();
+
+      Mockito.doReturn(Optional.of(mockServerUrl + "/jws.json"))
+              .when(serverUrlService)
+              .determineSignedJwksUri(any());
+      mockServerClient
+              .when(request().withMethod("GET").withPath(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
+              .respond(
+                      response()
+                              .withStatusCode(200)
+                              .withContentType(MediaType.APPLICATION_JSON)
+                              .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043));
+      mockServerClient
+              .when(request().withMethod("GET").withPath("/federation/fetch"))
+              .respond(
+                      response()
+                              .withStatusCode(200)
+                              .withContentType(MediaType.APPLICATION_JSON)
+                              .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043));
+      mockServerClient
+              .when(request().withMethod("GET").withPath("/jws.json"))
+              .respond(
+                      response()
+                              .withStatusCode(200)
+                              .withContentType(MediaType.APPLICATION_JSON)
+                              .withBody(SIGNED_JWKS_IDP));
+      final JsonWebKeySet jwks = entityStmntIdpsService.getSignedJwksIdp(mockServerUrl);
+      assertThat(jwks).isNotNull();
+      assertThat(jwks.findJsonWebKey("puk_fed_idp_token","EC", "sig", "ES256")).isNotNull();
+      assertThat(jwks.findJsonWebKey("puk_idp_sig","EC", "sig", "ES256")).isNotNull();
+
   }
 }

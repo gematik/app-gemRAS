@@ -1,3 +1,13 @@
+# Release 5.0.1
+
+- Java 21
+- switch to docker base image eclipse-temurin:21-jre
+- update dependencies
+- set values for acr/amr in auth code to values from id token
+- add another tls cert in signed_jwks for key rotation
+- change ttl of entity statement to 2 hours
+- read sig key from signed_jwks
+
 # Release 4.1.2
 
 - update dependencies

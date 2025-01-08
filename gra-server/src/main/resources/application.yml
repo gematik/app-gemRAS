@@ -13,6 +13,11 @@ fd-auth-server:
     keyId: puk_tls_sig
     use: sig
     x5cInJwks: true
+  tlsClientPrivKeyRotationConfig:
+    fileName: classpath:cert/ref-key-rotation.p12
+    keyId: puk_tls_sig_rotation
+    use: sig
+    x5cInJwks: true
   encPrivKeyConfig:
     fileName: keys/ref-privkey.pem
     keyId: puk_fd_enc

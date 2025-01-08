@@ -28,6 +28,11 @@ Assume the entity statement to be tested is under
   of your entity statement (i.e.*oidc/.well-known/openid-federation*)
 * open a shell and enter
 
+The keys
+`gra-server/src/main/resources/keys/ref-privkey.pem`
+`gra-server/src/main/resources/keys/ref-privkey-rotation.pem`
+are added for unit tests only and can be published.
+
 ```bash
 export TIGER_TESTENV_CFGFILE=tiger-external.yaml
 mvn clean verify -Dskip.unittests=true -Dcucumber.filter.tags="@EntityStatement or @SignedJwks"

@@ -16,7 +16,7 @@
 
 package de.gematik.idp.graserver.data;
 
-import static de.gematik.idp.IdpConstants.AMR_FAST_TRACK;
+import static de.gematik.idp.field.ClaimName.AUTHENTICATION_CLASS_REFERENCE;
 import static de.gematik.idp.field.ClaimName.AUTHENTICATION_METHODS_REFERENCE;
 import static de.gematik.idp.field.ClaimName.AUTH_TIME;
 import static de.gematik.idp.field.ClaimName.CLIENT_ID;
@@ -102,7 +102,13 @@ public class AuthorizationCodeBuilder {
     claimsMap.put(SERVER_NONCE.getJoseName(), Nonce.getNonceAsBase64UrlEncodedString(24));
     claimsMap.put(ISSUER.getJoseName(), issuerUrl);
     claimsMap.put(JWT_ID.getJoseName(), Nonce.getNonceAsHex(IdpConstants.JTI_LENGTH));
-    claimsMap.put(AUTHENTICATION_METHODS_REFERENCE.getJoseName(), List.of(AMR_FAST_TRACK));
+    claimsMap.put(
+        AUTHENTICATION_METHODS_REFERENCE.getJoseName(),
+        ((List<?>) idTokenPlain.getBodyClaim(AUTHENTICATION_METHODS_REFERENCE).orElseThrow())
+            .getFirst());
+    claimsMap.put(
+        AUTHENTICATION_CLASS_REFERENCE.getJoseName(),
+        idTokenPlain.getBodyClaim(AUTHENTICATION_CLASS_REFERENCE).orElseThrow());
 
     final Map<String, Object> headerMap = new HashMap<>();
     headerMap.put(TYPE.getJoseName(), "JWT");
@@ -120,7 +126,7 @@ public class AuthorizationCodeBuilder {
    *A_22271-01 states that for the erezept auth server these claims are to be included with an empty
    * string as the value
    */
-  private static void addFamNameAndGivenNameForScopeERezept(Map<String, Object> claimsMap) {
+  private static void addFamNameAndGivenNameForScopeERezept(final Map<String, Object> claimsMap) {
     claimsMap.put(GIVEN_NAME.getJoseName(), "");
     claimsMap.put(FAMILY_NAME.getJoseName(), "");
   }

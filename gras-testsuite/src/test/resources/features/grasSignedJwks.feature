@@ -119,11 +119,11 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
     Given TGR clear recorded messages
     When TGR sende eine leere GET Anfrage an "${signed_jwks_uri}"
     And TGR find request to path ".*"
-    Then TGR current response at "$.body.body.keys.[?((@.use.content == 'sig') && ( @.x5c.0.content =~ '.*'))]" matches as JSON:
+    Then TGR current response at "$.body.body.keys.[?((@.use.content == 'sig') && ( @.x5c.0.content =~ '.*') && ( @.kid.content == "puk_tls_sig"))]" matches as JSON:
       """
         {
           use:                           'sig',
-          kid:                           '.*',
+          kid:                           'puk_tls_sig',
           kty:                           'EC',
           crv:                           'P-256',
           x:                             "${json-unit.ignore}",
@@ -132,3 +132,16 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
           x5c:                           "${json-unit.ignore}"
         }
       """
+    And TGR current response at "$.body.body.keys.[?((@.use.content == 'sig') && ( @.x5c.0.content =~ '.*') && ( @.kid.content == "puk_tls_sig_rotation"))]" matches as JSON:
+      """
+          {
+            use:                           'sig',
+            kid:                           'puk_tls_sig_rotation',
+            kty:                           'EC',
+            crv:                           'P-256',
+            x:                             "${json-unit.ignore}",
+            y:                             "${json-unit.ignore}",
+            alg:                           "ES256",
+            x5c:                           "${json-unit.ignore}"
+          }
+        """

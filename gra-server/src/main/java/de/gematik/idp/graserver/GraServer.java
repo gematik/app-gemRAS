@@ -19,6 +19,8 @@ package de.gematik.idp.graserver;
 import de.gematik.idp.graserver.configuration.FdAuthServerConfiguration;
 import jakarta.annotation.PostConstruct;
 import java.security.Security;
+import javax.net.ssl.SSLContext;
+import kong.unirest.core.Unirest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -46,9 +48,10 @@ public class GraServer {
   }
 
   private final FdAuthServerConfiguration fdAuthServerConfiguration;
+  private final SSLContext sslContext;
 
   @PostConstruct
-  public void setGrasLogLevel() {
+  public void init() {
     final String loglevel = fdAuthServerConfiguration.getLoglevel();
     final String loggerServer = "de.gematik.idp.graserver";
     final String loggerRequests = "org.springframework.web.filter.CommonsRequestLoggingFilter";
@@ -59,6 +62,9 @@ public class GraServer {
     final LoggerContext loggerContext =
         LoggerContext.getContext(StackLocatorUtil.getCallerClassLoader(2), false, null);
     log.info("loglevel: {}", loggerContext.getLogger(loggerServer).getLevel());
+
+    Unirest.config().reset();
+    Unirest.config().sslContext(sslContext);
   }
 
   @Bean
