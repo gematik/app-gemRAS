@@ -1,5 +1,5 @@
 #
-# Copyright 2023 gematik GmbH
+# Copyright (Change Date see Readme), gematik GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,13 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# *******
+#
+# For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+#
 
 @SignedJwks
 Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
 
   Background: Initialisiere Testkontext durch Abfrage des Entity Statements
     When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
-    And TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    And TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
     Then TGR set local variable "signed_jwks_uri" to "!{rbel:currentResponseAsString('$..signed_jwks_uri')}"
 
 
@@ -36,7 +40,7 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
 
     Given TGR clear recorded messages
     When TGR sende eine leere GET Anfrage an "${signed_jwks_uri}"
-    And TGR find request to path ".*"
+    And TGR find first request to path ".*"
     Then TGR current response with attribute "$.responseCode" matches "200"
     And TGR current response with attribute "$.header.Content-Type" matches "application/jwk-set.*"
 
@@ -51,7 +55,7 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
 
     Given TGR clear recorded messages
     When TGR sende eine leere GET Anfrage an "${signed_jwks_uri}"
-    And TGR find request to path ".*"
+    And TGR find first request to path ".*"
     Then TGR current response at "$.body.header" matches as JSON:
             """
           {
@@ -72,7 +76,7 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
 
     Given TGR clear recorded messages
     When TGR sende eine leere GET Anfrage an "${signed_jwks_uri}"
-    And TGR find request to path ".*"
+    And TGR find first request to path ".*"
     Then TGR current response at "$.body.body" matches as JSON:
     """
       {
@@ -93,7 +97,7 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
 
     Given TGR clear recorded messages
     When TGR sende eine leere GET Anfrage an "${signed_jwks_uri}"
-    And TGR find request to path ".*"
+    And TGR find first request to path ".*"
     Then TGR current response at "$.body.body.keys.[?(@.use.content == 'enc')]" matches as JSON:
       """
         {
@@ -118,7 +122,7 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
 
     Given TGR clear recorded messages
     When TGR sende eine leere GET Anfrage an "${signed_jwks_uri}"
-    And TGR find request to path ".*"
+    And TGR find first request to path ".*"
     Then TGR current response at "$.body.body.keys.[?((@.use.content == 'sig') && ( @.x5c.0.content =~ '.*') && ( @.kid.content == "puk_tls_sig"))]" matches as JSON:
       """
         {

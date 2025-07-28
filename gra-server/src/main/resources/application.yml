@@ -40,9 +40,6 @@ fd-auth-server:
   serverUrl: "${FD_AUTH_SERVER_URL:http://127.0.0.1:8084}"
   fedmasterUrl: "${FEDMASTER_SERVER_URL:http://127.0.0.1:8083}"
   fedmasterSigPubKeyFilePath: "keys/ref-fedmaster-sig-pubkey.pem"
-  debug:
-    requestLogging: true
-  loglevel: debug
 server:
   port: ${SERVER_PORT:8084}
 management:
@@ -52,11 +49,16 @@ management:
     web:
       exposure:
         include: "health"
-    enabled-by-default: false
+    access:
+      default: read_only
   endpoint:
     health:
-      enabled: true
+      access: read_only
     metrics:
-      enabled: true
+      access: read_only
     logfile:
-      enabled: true
+      access: read_only
+logging:
+  level:
+    de.gematik: ${LOG_LEVEL_GEMATIK:info}
+  CommonsRequestLoggingEnabled: ${REQUEST_LOGGING_ENABLED:false}

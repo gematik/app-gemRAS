@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 gematik GmbH
+ * Copyright (Change Date see Readme), gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
 package de.gematik.idp.graserver;
@@ -95,15 +99,15 @@ public class ServerUrlService {
         .filter(StringUtils::isNotBlank);
   }
 
-    public Optional<String> determineSignedJwksUri(final JsonWebToken entityStmnt) {
-        final Map<String, Object> bodyClaims = entityStmnt.getBodyClaims();
-        final Map<String, Object> metadata =
-                Objects.requireNonNull(
-                        (Map<String, Object>) bodyClaims.get("metadata"), "missing claim: metadata");
-        final Map<String, Object> openidRelyingParty =
-                Objects.requireNonNull(
-                        (Map<String, Object>) metadata.get("openid_provider"),
-                        "missing claim: openid_provider");
-        return Optional.ofNullable((String) openidRelyingParty.getOrDefault("signed_jwks_uri", null));
-    }
+  public Optional<String> determineSignedJwksUri(final JsonWebToken entityStmnt) {
+    final Map<String, Object> bodyClaims = entityStmnt.getBodyClaims();
+    final Map<String, Object> metadata =
+        Objects.requireNonNull(
+            (Map<String, Object>) bodyClaims.get("metadata"), "missing claim: metadata");
+    final Map<String, Object> openidRelyingParty =
+        Objects.requireNonNull(
+            (Map<String, Object>) metadata.get("openid_provider"),
+            "missing claim: openid_provider");
+    return Optional.ofNullable((String) openidRelyingParty.getOrDefault("signed_jwks_uri", null));
+  }
 }

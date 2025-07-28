@@ -1,5 +1,5 @@
 #
-# Copyright 2023 gematik GmbH
+# Copyright (Change Date see Readme), gematik GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# *******
+#
+# For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 #
 
 @EntityStatement
@@ -31,7 +35,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
   - den Code 200
   - einen JWS enthalten
 
-    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
     Then TGR current response with attribute "$.responseCode" matches "200"
     And TGR current response with attribute "$.header.Content-Type" matches "application/entity-statement\+jwt.*"
 
@@ -46,7 +50,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
   Der Response Body muss ein JWS mit den folgenden Header Claims sein:
 
 
-    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
     Then TGR current response at "$.body.header" matches as JSON:
             """
           {
@@ -65,7 +69,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
 
   Der Response Body muss ein JWS mit den folgenden Body Claims sein:
 
-    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
     Then TGR current response at "$.body.body" matches as JSON:
             """
           {
@@ -91,7 +95,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
 
   Der Response Body muss ein JWS sein. Dieser muss einen korrekt aufgebauten Body Claim metadata enthalten
 
-    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
     Then TGR current response at "$.body.body.metadata" matches as JSON:
     """
           {
@@ -99,11 +103,23 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
             federation_entity:                         "${json-unit.ignore}"
           }
     """
-    And TGR current response at "$.body.body.metadata.openid_relying_party" matches as JSON:
+
+  @TCID:RP_ENTITY_STATEMENT_005
+  @Approval
+  Scenario: RP EntityStatement - Gutfall - Validiere openid_relying_party Claim
+
+  ```
+  Wir rufen das Entity Statement einer Relying Party der Föderation ab
+
+  Der Response Body muss ein JWS sein. Dieser muss im Claim metadata, einen korrekt aufgebauten Body Claim openid_relying_party enthalten
+
+    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
+    Then TGR current response at "$.body.body.metadata.openid_relying_party" matches as JSON:
     """
           {
+            ____jwks:                                     "${json-unit.ignore}",
             ____signed_jwks_uri:                          'http.*',
-            ____organization_name:                        '.*',
+            organization_name:                            '.*',
             client_name:                                  '.*',
             ____logo_uri:                                 'http.*',
             redirect_uris:                                "${json-unit.ignore}",
@@ -116,22 +132,51 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
             id_token_signed_response_alg:                 "ES256",
             id_token_encrypted_response_alg:              "ECDH-ES",
             id_token_encrypted_response_enc:              "A256GCM",
-            scope:                                        '.*'
+            scope:                                        '.*',
+            ti_features_supported:                        "${json-unit.ignore}"
           }
     """
-    And TGR current response with attribute "$.body.body.metadata.openid_relying_party.redirect_uris.0" matches ".*"
-    And TGR current response at "$.body.body.metadata.federation_entity" matches as JSON:
+    And TGR current response at "$.body.body.metadata.openid_relying_party.ti_features_supported" matches as JSON:
     """
           {
-            ____name:                 '.*',
-            contacts:             "${json-unit.ignore}",
+            id_token_version_supported:      ["1.0.0", "2.0.0"]
+          }
+    """
+
+  @TCID:RP_ENTITY_STATEMENT_006
+  @Approval
+  Scenario: RP EntityStatement - Gutfall - Validiere federation_entity Claim
+
+  ```
+  Wir rufen das Entity Statement einer Relying Party der Föderation ab
+
+  Der Response Body muss ein JWS sein. Dieser muss im Claim metadata, einen korrekt aufgebauten Body Claim federation_entity enthalten
+
+    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
+    Then TGR current response at "$.body.body.metadata.federation_entity" matches as JSON:
+    """
+          {
+            name:                 '.*',
+            ____contacts:             "${json-unit.ignore}",
             ____homepage_uri:     'http.*'
           }
     """
-    And TGR current response with attribute "$.body.body.metadata.federation_entity.contacts.0" matches ".*"
+
+  @TCID:RP_ENTITY_STATEMENT_007
+  @Approval
+  Scenario: RP EntityStatement - Gutfall - Validiere contacts Claim
+
+  ```
+  Wir rufen das Entity Statement einer Relying Party der Föderation ab
+
+  Der Response Body muss ein JWS sein. Dieser muss im Claim metadata, im Claim federation_entity,
+  im optionalen Claim contacts einen Eintrag enthalten, wenn contacts vorhanden ist
+
+    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
+    Then current response with optional attribute contacts is either not present or a JSON Array
 
 
-  @TCID:RP_ENTITY_STATEMENT_005
+  @TCID:RP_ENTITY_STATEMENT_008
   @Approval
   Scenario: RP EntityStatement - Gutfall - Validiere JWKS in Body Claims
 
@@ -141,7 +186,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
   Der Response Body muss ein JWS mit einem JWKS Claim sein.
   Das JWKS muss mindestens einen strukturell korrekten JWK mit use = sig und x5c-Element enthalten.
 
-    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
     And TGR set local variable "entityStatementSigKeyKid" to "!{rbel:currentResponseAsString('$.body.header.kid')}"
     Then TGR current response at "$.body.body.jwks.keys.[?(@.kid.content =='${entityStatementSigKeyKid}')]" matches as JSON:
         """
@@ -157,7 +202,7 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
         """
 
 
-  @TCID:RP_ENTITY_STATEMENT_006
+  @TCID:RP_ENTITY_STATEMENT_009
   @Approval
   Scenario: RP EntityStatement - Gutfall - Validiere Signatur
 
@@ -168,11 +213,11 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
 
     Given TGR clear recorded messages
     When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
-    And TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    And TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
     And TGR current response with attribute "$.body.signature.isValid" matches "true"
 
 
-  @TCID:RP_ENTITY_STATEMENT_007
+  @TCID:RP_ENTITY_STATEMENT_010
   @Approval
   Scenario: RP EntityStatement - Gutfall - Validiere Scope Claim
 
@@ -181,6 +226,6 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
   Der Scope muss mindestens die Claims openid und urn:telematik:versicherter (für das Schreiben in der ePA) enthalten
 
 
-    When TGR find request to path "/${tiger.fachdienstEntityStatementPath}"
+    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
     And TGR current response with attribute "$.body.body.metadata.openid_relying_party.scope" matches ".*openid.*"
     And TGR current response with attribute "$.body.body.metadata.openid_relying_party.scope" matches ".*urn:telematik:versicherter.*"

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 gematik GmbH
+ * Copyright (Change Date see Readme), gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
 package de.gematik.idp.graserver.services;
@@ -26,7 +30,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
-
 import kong.unirest.core.HttpResponse;
 import kong.unirest.core.Unirest;
 import lombok.RequiredArgsConstructor;
@@ -197,22 +200,24 @@ public class EntityStmntIdpsService {
           HttpStatus.BAD_REQUEST);
     }
   }
+
   public JsonWebKeySet getSignedJwksIdp(final String issuer) {
-     final JsonWebToken entityStmntIdp = getEntityStatementIdp(issuer);
-     final Optional<String> signedJwksUri = serverUrlService.determineSignedJwksUri(entityStmntIdp);
-     if (signedJwksUri.isPresent()) {
-         final HttpResponse<String> resp = Unirest.get(signedJwksUri.get()).asString();
-         if (resp.isSuccess()) {
-             // TODO check signature
-             try {
-                 return new JsonWebKeySet(new JsonWebToken(resp.getBody()).getPayloadDecoded());
-             } catch (JoseException e) {
-                 throw new FdAuthServerException(e);
-             }
-         }
-         throw new FdAuthServerException("Error while fetching the IDP's signed_jwks", HttpStatus.INTERNAL_SERVER_ERROR);
-     }
-     throw new FdAuthServerException("No signed_jwks_uri found in IDP entity statement", HttpStatus.INTERNAL_SERVER_ERROR);
+    final JsonWebToken entityStmntIdp = getEntityStatementIdp(issuer);
+    final Optional<String> signedJwksUri = serverUrlService.determineSignedJwksUri(entityStmntIdp);
+    if (signedJwksUri.isPresent()) {
+      final HttpResponse<String> resp = Unirest.get(signedJwksUri.get()).asString();
+      if (resp.isSuccess()) {
+        // TODO check signature
+        try {
+          return new JsonWebKeySet(new JsonWebToken(resp.getBody()).getPayloadDecoded());
+        } catch (JoseException e) {
+          throw new FdAuthServerException(e);
+        }
+      }
+      throw new FdAuthServerException(
+          "Error while fetching the IDP's signed_jwks", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    throw new FdAuthServerException(
+        "No signed_jwks_uri found in IDP entity statement", HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
-
