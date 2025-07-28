@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 gematik GmbH
+ * Copyright (Change Date see Readme), gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
 package de.gematik.idp.graserver.controller;
@@ -66,7 +70,8 @@ class AuthorizationControllerEntityStatementTest {
           "id_token_signed_response_alg",
           "id_token_encrypted_response_alg",
           "id_token_encrypted_response_enc",
-          "scope");
+          "scope",
+          "ti_features_supported");
 
   private static final String SERVER_CERT_FILE = "src/test/resources/fachdienst-sig.pem";
 
@@ -160,6 +165,8 @@ class AuthorizationControllerEntityStatementTest {
         .containsEntry("id_token_encrypted_response_alg", "ECDH-ES")
         .containsEntry("id_token_encrypted_response_enc", "A256GCM")
         .containsEntry("scope", "urn:telematik:display_name urn:telematik:versicherter openid");
+
+    assertThat(openidRelyingParty.containsKey("ti_features_supported")).isTrue();
   }
 
   @SuppressWarnings("unchecked")
@@ -176,6 +183,21 @@ class AuthorizationControllerEntityStatementTest {
         .containsEntry("homepage_uri", "https://Fachdienst007.de");
     assertThat((List<String>) federationEntity.get("contacts"))
         .containsExactlyInAnyOrder("Support@Fachdienst007.de");
+  }
+
+  @Test
+  void entityStatement_tiFeaturesSupportedContentCorrect() {
+
+    final Map<String, Object> metadata = getInnerClaimMap(bodyClaims, "metadata");
+    final Map<String, Object> openidRelyingParty =
+        Objects.requireNonNull(
+            (Map<String, Object>) metadata.get("openid_relying_party"),
+            "missing claim: openid_relying_party");
+
+    final Map<String, Object> tiFeatureSupported =
+        getInnerClaimMap(openidRelyingParty, "ti_features_supported");
+    assertThat((List<String>) tiFeatureSupported.get("id_token_version_supported"))
+        .containsExactlyInAnyOrder("1.0.0", "2.0.0");
   }
 
   @SuppressWarnings("unchecked")

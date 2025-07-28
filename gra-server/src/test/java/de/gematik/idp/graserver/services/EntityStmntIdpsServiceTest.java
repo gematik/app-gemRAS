@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 gematik GmbH
+ * Copyright (Change Date see Readme), gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
 package de.gematik.idp.graserver.services;
@@ -28,6 +32,7 @@ import de.gematik.idp.graserver.ServerUrlService;
 import de.gematik.idp.graserver.configuration.FdAuthServerConfiguration;
 import de.gematik.idp.graserver.exceptions.FdAuthServerException;
 import de.gematik.idp.token.JsonWebToken;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.jose4j.jwk.JsonWebKeySet;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,8 +47,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.test.context.ActiveProfiles;
-
-import java.util.Optional;
 
 @ActiveProfiles("mock-serverUrlService")
 @Slf4j
@@ -214,40 +217,39 @@ class EntityStmntIdpsServiceTest {
   }
 
   @Test
-    void testGetSignedJwksIdp(){
+  void testGetSignedJwksIdp() {
 
-      Mockito.doReturn(mockServerUrl + "/federation/fetch")
-              .when(serverUrlService)
-              .determineFetchEntityStatementEndpoint();
+    Mockito.doReturn(mockServerUrl + "/federation/fetch")
+        .when(serverUrlService)
+        .determineFetchEntityStatementEndpoint();
 
-      Mockito.doReturn(Optional.of(mockServerUrl + "/jws.json"))
-              .when(serverUrlService)
-              .determineSignedJwksUri(any());
-      mockServerClient
-              .when(request().withMethod("GET").withPath(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
-              .respond(
-                      response()
-                              .withStatusCode(200)
-                              .withContentType(MediaType.APPLICATION_JSON)
-                              .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043));
-      mockServerClient
-              .when(request().withMethod("GET").withPath("/federation/fetch"))
-              .respond(
-                      response()
-                              .withStatusCode(200)
-                              .withContentType(MediaType.APPLICATION_JSON)
-                              .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043));
-      mockServerClient
-              .when(request().withMethod("GET").withPath("/jws.json"))
-              .respond(
-                      response()
-                              .withStatusCode(200)
-                              .withContentType(MediaType.APPLICATION_JSON)
-                              .withBody(SIGNED_JWKS_IDP));
-      final JsonWebKeySet jwks = entityStmntIdpsService.getSignedJwksIdp(mockServerUrl);
-      assertThat(jwks).isNotNull();
-      assertThat(jwks.findJsonWebKey("puk_fed_idp_token","EC", "sig", "ES256")).isNotNull();
-      assertThat(jwks.findJsonWebKey("puk_idp_sig","EC", "sig", "ES256")).isNotNull();
-
+    Mockito.doReturn(Optional.of(mockServerUrl + "/jws.json"))
+        .when(serverUrlService)
+        .determineSignedJwksUri(any());
+    mockServerClient
+        .when(request().withMethod("GET").withPath(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
+        .respond(
+            response()
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON)
+                .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043));
+    mockServerClient
+        .when(request().withMethod("GET").withPath("/federation/fetch"))
+        .respond(
+            response()
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON)
+                .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043));
+    mockServerClient
+        .when(request().withMethod("GET").withPath("/jws.json"))
+        .respond(
+            response()
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON)
+                .withBody(SIGNED_JWKS_IDP));
+    final JsonWebKeySet jwks = entityStmntIdpsService.getSignedJwksIdp(mockServerUrl);
+    assertThat(jwks).isNotNull();
+    assertThat(jwks.findJsonWebKey("puk_fed_idp_token", "EC", "sig", "ES256")).isNotNull();
+    assertThat(jwks.findJsonWebKey("puk_idp_sig", "EC", "sig", "ES256")).isNotNull();
   }
 }

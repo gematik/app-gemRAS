@@ -1,3 +1,10 @@
+# Release 5.1.1
+
+- refactor setting/printing log level - see [gras logging](README.md#gra-server-logging)
+- add claim for ti features supported
+- add feature test for new claim in entity statement
+- update dependencies
+
 # Release 5.0.1
 
 - Java 21

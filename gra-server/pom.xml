@@ -8,11 +8,11 @@
     <artifactId>gras-global</artifactId>
     <groupId>de.gematik.idp</groupId>
     <relativePath>../pom.xml</relativePath>
-    <version>5.0.1</version>
+    <version>5.1.1</version>
   </parent>
 
   <artifactId>gra-server</artifactId>
-  <version>5.0.1</version>
+  <version>5.1.1</version>
   <packaging>jar</packaging>
 
   <name>gra-server</name>
@@ -20,6 +20,7 @@
 
   <properties>
     <commit_hash>undefined</commit_hash>
+    <skip.dockerbuild>true</skip.dockerbuild>
   </properties>
 
   <dependencies>
@@ -60,7 +61,7 @@
     <dependency>
       <artifactId>mockito-core</artifactId>
       <groupId>org.mockito</groupId>
-      <version>5.15.2</version>
+      <version>5.18.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -101,7 +102,7 @@
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>2.11.0</version>
+      <version>2.13.1</version>
     </dependency>
 
     <dependency>

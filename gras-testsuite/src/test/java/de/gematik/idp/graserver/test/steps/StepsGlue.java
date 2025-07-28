@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 gematik GmbH
+ * Copyright (Date see Readme), gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,19 +12,28 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
 package de.gematik.idp.graserver.test.steps;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelValueFacet;
-import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.rbellogger.data.core.RbelValueFacet;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
+import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import groovy.util.logging.Slf4j;
 import io.cucumber.java.en.And;
-import java.util.Deque;
+import io.cucumber.java.en.Then;
+import java.util.List;
 
 @Slf4j
 public class StepsGlue {
+
+  private final RbelMessageRetriever rbelMessageRetriever = RbelMessageRetriever.getInstance();
 
   @And("current response with attributes iat and exp to be of type Long and iat < exp")
   public void checkIatBeforeExp() throws Exception {
@@ -35,25 +44,40 @@ public class StepsGlue {
     }
   }
 
-  private Long readClaimAsLongOrThrow(final String claimName) throws Exception {
-    final Deque<RbelElement> rbelMessages =
-        TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getRbelMessages();
-    rbelMessages.getLast();
-    final Object claim =
-        rbelMessages
-            .getLast()
-            .findElement("$.body.body." + claimName)
-            .orElseThrow()
-            .getFacet(RbelValueFacet.class)
-            .get()
-            .getValue();
-    if (!(claim instanceof Long)) {
-      throw new Exception(
-          "Attribute "
-              + claimName
-              + " has to be of type Long, but is of type "
-              + claim.getClass().getSimpleName());
+  @Then("current response with optional attribute contacts is either not present or a JSON Array")
+  public void readContactsInCurrentResponse() throws Exception {
+    final String rbelPath = "$.body.body.metadata.federation_entity.contacts";
+    try {
+      final List<RbelElement> rbelElements =
+          rbelMessageRetriever.findElementsInCurrentResponse(rbelPath);
+      final Object contactsArray =
+          rbelElements
+              .getFirst()
+              .getFacet(RbelJsonFacet.class)
+              .orElseThrow(() -> new Exception("contacts is not an array"))
+              .getJsonElement();
+      if (!(contactsArray instanceof ArrayNode)) {
+        throw new Exception("contacts is not an array");
+      } else if (((ArrayNode) contactsArray).isEmpty()) {
+        throw new Exception(
+            "contacts is empty, but should either not be present or have at least one entry");
+      }
+    } catch (final AssertionError e) {
+      if (!e.getMessage()
+          .contains(
+              "Unable to find element in response for rbel path '" + rbelPath + "' in message")) {
+        throw e;
+      }
     }
-    return (Long) claim;
+  }
+
+  private Long readClaimAsLongOrThrow(final String claimName) {
+    return (Long)
+        rbelMessageRetriever
+            .findElementsInCurrentResponse("$.body.body." + claimName)
+            .getFirst()
+            .getFacet(RbelValueFacet.class)
+            .orElseThrow()
+            .getValue();
   }
 }
