@@ -1,3 +1,10 @@
+# Release 5.2.0
+
+- migrate to spring boot 4.0.x
+- migrate to jackson 3.x
+- implement token endpoint MVP
+- update dependencies
+
 # Release 5.1.1
 
 - refactor setting/printing log level - see [gras logging](README.md#gra-server-logging)

@@ -31,7 +31,6 @@ import de.gematik.idp.crypto.CryptoLoader;
 import de.gematik.idp.exceptions.IdpJwtSignatureInvalidException;
 import de.gematik.idp.field.ClaimName;
 import de.gematik.idp.token.JsonWebToken;
-import jakarta.ws.rs.core.HttpHeaders;
 import java.io.File;
 import java.io.IOException;
 import java.security.PublicKey;
@@ -49,8 +48,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(
+    properties = {
+      "fd-auth-server.server-url=myFD_AUTH_SERVER_URL",
+      "fd-auth-server.fedmaster-url=myFEDMASTER_SERVER_URL"
+    })
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AuthorizationControllerEntityStatementTest {
 
@@ -145,7 +151,7 @@ class AuthorizationControllerEntityStatementTest {
             "missing claim: openid_relying_party");
 
     assertThat(openidRelyingParty)
-        .containsEntry("signed_jwks_uri", "https://idpfadi.dev.gematik.solutions" + "/jws.json");
+        .containsEntry("signed_jwks_uri", "myFD_AUTH_SERVER_URL" + "/jws.json");
     assertThat(openidRelyingParty.get("organization_name")).asString().isNotEmpty();
     assertThat(openidRelyingParty.get("client_name")).asString().isNotEmpty();
     assertThat(openidRelyingParty.get("logo_uri")).asString().isNotEmpty();
@@ -179,7 +185,7 @@ class AuthorizationControllerEntityStatementTest {
             "missing claim: federation_entity");
 
     assertThat(federationEntity)
-        .containsEntry("name", "Fachdienst007")
+        .containsEntry("organization_name", "gematik")
         .containsEntry("homepage_uri", "https://Fachdienst007.de");
     assertThat((List<String>) federationEntity.get("contacts"))
         .containsExactlyInAnyOrder("Support@Fachdienst007.de");
@@ -222,7 +228,7 @@ class AuthorizationControllerEntityStatementTest {
         (List<Map<String, Object>>)
             new JsonWebToken(response.getBody()).getBodyClaims().get("keys");
 
-    assertThat(keyList).hasSize(3);
+    assertThat(keyList).hasSize(4);
   }
 
   @Test

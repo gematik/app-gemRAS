@@ -22,27 +22,24 @@ package de.gematik.idp.graserver.services;
 
 import static de.gematik.idp.IdpConstants.ENTITY_STATEMENT_TYP;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.idp.authentication.IdpJwtProcessor;
-import de.gematik.idp.data.JwtHelper;
-import de.gematik.idp.graserver.ServerUrlService;
 import de.gematik.idp.graserver.configuration.FdAuthServerConfiguration;
 import java.time.ZonedDateTime;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
-@SpringBootTest
+@SpringBootTest(webEnvironment = WebEnvironment.NONE)
 class EntityStatementBuilderTest {
 
   @Autowired private IdpJwtProcessor jwtProcessorEsSigPrivKey;
-  @Autowired private ObjectMapper objectMapper;
   @Autowired private EntityStatementBuilder entityStatementBuilder;
-  @Autowired private ServerUrlService serverUrlService;
   @Autowired private FdAuthServerConfiguration fdAuthServerConfiguration;
 
   @Test
@@ -51,14 +48,19 @@ class EntityStatementBuilderTest {
     final long nowPlus20Years =
         ZonedDateTime.now().plusYears(entityStatementTtlYears).toEpochSecond();
     final String es =
-        JwtHelper.signJson(
-            jwtProcessorEsSigPrivKey,
-            objectMapper,
-            entityStatementBuilder.buildEntityStatement(
-                "http://localhost:8084",
-                fdAuthServerConfiguration.getFedmasterUrl(),
-                nowPlus20Years),
-            ENTITY_STATEMENT_TYP);
+        jwtProcessorEsSigPrivKey
+            .buildJws(
+                JsonMapper.builder()
+                    .build()
+                    .writeValueAsString(
+                        entityStatementBuilder.buildEntityStatement(
+                            "http://localhost:8084",
+                            fdAuthServerConfiguration.getFedmasterUrl(),
+                            nowPlus20Years)),
+                Map.ofEntries(Map.entry("typ", ENTITY_STATEMENT_TYP)),
+                false)
+            .getRawString();
+
     assertThat(es).isNotEmpty();
     log.info("Entity statement (valid {} years):\n{}", entityStatementTtlYears, es);
   }

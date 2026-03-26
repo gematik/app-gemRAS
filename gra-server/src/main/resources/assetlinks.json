@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "de.gematik.callee",
+      "sha256_cert_fingerprints": [
+        "2A:24:9D:C7:9C:4D:B0:EB:64:CA:97:BD:00:4C:EC:F5:59:EC:DA:77:BE:7D:46:87:67:55:3F:E6:92:68:08:D9"
+      ]
+    }
+  }
+]

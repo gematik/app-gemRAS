@@ -24,39 +24,49 @@ import static de.gematik.idp.IdpConstants.ENTITY_STATEMENT_ENDPOINT;
 import static de.gematik.idp.IdpConstants.ENTITY_STATEMENT_TYP;
 import static de.gematik.idp.IdpConstants.FED_AUTH_ENDPOINT;
 import static de.gematik.idp.IdpConstants.IDP_LIST_ENDPOINT;
+import static de.gematik.idp.IdpConstants.TOKEN_ENDPOINT;
 import static de.gematik.idp.field.ClientUtilities.generateCodeChallenge;
 import static de.gematik.idp.field.ClientUtilities.generateCodeVerifier;
 import static de.gematik.idp.graserver.Constants.ENTITY_STATEMENT_EXPIRED_ENDPOINT;
 import static de.gematik.idp.graserver.Constants.ENTITY_STATEMENT_INVALID_SIG_ENDPOINT;
+import static de.gematik.idp.graserver.Constants.ESSENTIAL_CLAIMS;
 import static de.gematik.idp.graserver.Constants.FD_AUTH_SERVER_NONCE_LENGTH;
 import static de.gematik.idp.graserver.Constants.FD_AUTH_SERVER_STATE_LENGTH;
 import static de.gematik.idp.graserver.Constants.FED_SIGNED_JWKS_ENDPOINT;
+import static de.gematik.idp.graserver.helper.JsonHelper.signJson;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import de.gematik.idp.authentication.IdpJwtProcessor;
 import de.gematik.idp.crypto.Nonce;
 import de.gematik.idp.data.FederationPrivKey;
+import de.gematik.idp.data.FederationPubKey;
 import de.gematik.idp.data.JwtHelper;
 import de.gematik.idp.data.ParResponse;
 import de.gematik.idp.data.TokenResponse;
 import de.gematik.idp.graserver.ServerUrlService;
 import de.gematik.idp.graserver.configuration.FdAuthServerConfiguration;
+import de.gematik.idp.graserver.data.AccessTokenResponse;
+import de.gematik.idp.graserver.data.AuthCodeResponse;
 import de.gematik.idp.graserver.data.AuthSession;
 import de.gematik.idp.graserver.data.AuthorizationCodeBuilder;
+import de.gematik.idp.graserver.data.RedirectUri;
 import de.gematik.idp.graserver.exceptions.FdAuthServerException;
 import de.gematik.idp.graserver.services.ClientAssertionBuilder;
-import de.gematik.idp.graserver.services.EntityListService;
 import de.gematik.idp.graserver.services.EntityStatementBuilder;
 import de.gematik.idp.graserver.services.EntityStmntIdpsService;
+import de.gematik.idp.graserver.services.IdpEntityListService;
 import de.gematik.idp.graserver.services.JwksBuilder;
 import de.gematik.idp.graserver.services.LocationBuilder;
+import de.gematik.idp.graserver.token.AccessTokenBuilder;
 import de.gematik.idp.token.IdpJwe;
 import de.gematik.idp.token.JsonWebToken;
 import de.gematik.idp.token.TokenClaimExtraction;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
+import java.security.Key;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -78,6 +88,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 @RestController
 @Validated
@@ -87,6 +99,7 @@ public class AuthorizationController {
 
   @Autowired FederationPrivKey encPrivKey;
   @Autowired FederationPrivKey tlsClientPrivKey;
+  @Autowired Key symmetricEncryptionKey;
 
   private static final int NONCE_LENGTH_MAX = 512;
 
@@ -94,10 +107,10 @@ public class AuthorizationController {
 
   private final ServerUrlService serverUrlService;
   private final EntityStmntIdpsService entityStmntIdpsService;
-  private final EntityListService entityListService;
+  private final IdpEntityListService idpEntityListService;
   private final ClientAssertionBuilder clientAssertionBuilder;
   private final IdpJwtProcessor jwtProcessorEsSigPrivKey;
-  private final ObjectMapper objectMapper;
+  private final IdpJwtProcessor jwtProcessorAccessTokenSigPrivKey;
   private final EntityStatementBuilder entityStatementBuilder;
   private final JwksBuilder jwksBuilder;
   private final AuthorizationCodeBuilder authorizationCodeBuilder;
@@ -113,6 +126,7 @@ public class AuthorizationController {
               return size() > MAX_AUTH_SESSION_AMOUNT;
             }
           });
+  @Autowired private FederationPubKey tokenSigPubKey;
 
   private static void setNoCacheHeader(final HttpServletResponse response) {
     response.setHeader("Cache-Control", "no-store");
@@ -127,9 +141,8 @@ public class AuthorizationController {
       value = ENTITY_STATEMENT_ENDPOINT,
       produces = "application/entity-statement+jwt;charset=UTF-8")
   public String getEntityStatement() {
-    return JwtHelper.signJson(
+    return signJson(
         jwtProcessorEsSigPrivKey,
-        objectMapper,
         entityStatementBuilder.buildEntityStatement(
             serverUrlService.determineServerUrl(), fdAuthServerConfiguration.getFedmasterUrl()),
         ENTITY_STATEMENT_TYP);
@@ -141,14 +154,13 @@ public class AuthorizationController {
    */
   @GetMapping(value = IDP_LIST_ENDPOINT, produces = "application/jwt;charset=UTF-8")
   public String getEntityListing() {
-    return entityListService.getEntityList();
+    return idpEntityListService.getEntityList();
   }
 
   @GetMapping(value = FED_SIGNED_JWKS_ENDPOINT, produces = "application/jwk-set+json;charset=UTF-8")
   public String getSignedJwks() {
-    return JwtHelper.signJson(
+    return signJson(
         jwtProcessorEsSigPrivKey,
-        objectMapper,
         jwksBuilder.build(serverUrlService.determineServerUrl()),
         "jwk-set+json");
   }
@@ -161,9 +173,8 @@ public class AuthorizationController {
       value = ENTITY_STATEMENT_EXPIRED_ENDPOINT,
       produces = "application/entity-statement+jwt;charset=UTF-8")
   public String getExpiredEntityStatement() {
-    return JwtHelper.signJson(
+    return signJson(
         jwtProcessorEsSigPrivKey,
-        objectMapper,
         entityStatementBuilder.buildExpiredEntityStatement(
             serverUrlService.determineServerUrl(), fdAuthServerConfiguration.getFedmasterUrl()),
         ENTITY_STATEMENT_TYP);
@@ -178,9 +189,8 @@ public class AuthorizationController {
       produces = "application/entity-statement+jwt;charset=UTF-8")
   public String getInvalidSigEntityStatement() {
     final String jwsString =
-        JwtHelper.signJson(
+        signJson(
             jwtProcessorEsSigPrivKey,
-            objectMapper,
             entityStatementBuilder.buildEntityStatement(
                 serverUrlService.determineServerUrl(), fdAuthServerConfiguration.getFedmasterUrl()),
             ENTITY_STATEMENT_TYP);
@@ -199,7 +209,7 @@ public class AuthorizationController {
   public void getRequestUri(
       @RequestParam(name = "client_id") @NotEmpty final String frontendClientId,
       @RequestParam(name = "state") @NotEmpty final String frontendState,
-      @RequestParam(name = "redirect_uri") @NotEmpty final String frontendRedirectUri,
+      @RequestParam(name = "redirect_uri") @Valid final RedirectUri frontendRedirectUri,
       @RequestParam(name = "code_challenge") @NotEmpty final String frontendCodeChallenge,
       @RequestParam(name = "code_challenge_method") @NotEmpty @Pattern(regexp = "S256")
           final String frontendCodeChallengeMethod,
@@ -228,7 +238,7 @@ public class AuthorizationController {
             .frontendResponseType(responseType)
             .frontendScope(scope)
             .frontendState(frontendState)
-            .frontendRedirectUri(frontendRedirectUri)
+            .frontendRedirectUri(frontendRedirectUri.toString())
             .fdAuthServerCodeVerifier(fdAuthServerCodeVerifier)
             .frontendNonce(frontendNonce)
             .idpIss(idpIss)
@@ -252,6 +262,7 @@ public class AuthorizationController {
         sendPar(
             sekIdpParEndpoint,
             fdAuthServerUrl,
+            frontendRedirectUri.toString(),
             fdAuthServerState,
             fdAuthServerCodeChallenge,
             fdAuthServerNonce);
@@ -275,27 +286,42 @@ public class AuthorizationController {
   private ParResponse sendPar(
       final String sekIdpParEndpoint,
       final String fdAuthServerUrl,
+      final String frontendRedirectUri,
       final String fdAuthServerState,
       final String fdAuthServerCodeChallenge,
       final String fdAuthServerNonce) {
     try {
-      return objectMapper.readValue(
-          Unirest.post(sekIdpParEndpoint)
-              .field("client_id", fdAuthServerUrl)
-              .field("state", fdAuthServerState)
-              .field("redirect_uri", fdAuthServerUrl + FED_AUTH_ENDPOINT)
-              .field("code_challenge", fdAuthServerCodeChallenge)
-              .field("code_challenge_method", "S256")
-              .field("response_type", "code")
-              .field("nonce", fdAuthServerNonce)
-              .field("scope", "urn:telematik:display_name urn:telematik:versicherter openid")
-              .field("acr_values", "gematik-ehealth-loa-high")
-              .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-              .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-              .asString()
-              .getBody(),
-          ParResponse.class);
-    } catch (final JsonProcessingException e) {
+      final JsonObject idTokenClaims = new JsonObject();
+      ESSENTIAL_CLAIMS.forEach(
+          claimName -> {
+            final JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("essential", true);
+            idTokenClaims.add(claimName.getJoseName(), jsonObject);
+          });
+
+      final JsonObject claims = new JsonObject();
+      claims.add("id_token", idTokenClaims);
+      return JsonMapper.builder()
+          .build()
+          .readValue(
+              Unirest.post(sekIdpParEndpoint)
+                  .field("client_id", fdAuthServerUrl)
+                  .field("state", fdAuthServerState)
+                  .field("redirect_uri", frontendRedirectUri)
+                  .field("code_challenge", fdAuthServerCodeChallenge)
+                  .field("code_challenge_method", "S256")
+                  .field("response_type", "code")
+                  .field("nonce", fdAuthServerNonce)
+                  .field("scope", "urn:telematik:display_name urn:telematik:versicherter openid")
+                  .field("acr_values", "gematik-ehealth-loa-high")
+                  .field(
+                      "claims", "{\"id_token\":{\"urn:telematik:claims:id\":{\"essential\":true}}}")
+                  .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                  .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                  .asString()
+                  .getBody(),
+              ParResponse.class);
+    } catch (final JacksonException e) {
       throw new FdAuthServerException(
           "Error while parsing PAR response from " + sekIdpParEndpoint, e);
     }
@@ -313,10 +339,9 @@ public class AuthorizationController {
       value = FED_AUTH_ENDPOINT,
       params = "code",
       consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-  public void postAuthorizationCode(
+  public AuthCodeResponse postAuthorizationCodeIDP(
       @RequestParam(name = "code") @NotEmpty final String authorizationCodeFedIdp,
-      @RequestParam(name = "state") @NotEmpty final String fdAuthServerState,
-      final HttpServletResponse respMsgNr12) {
+      @RequestParam(name = "state") @NotEmpty final String fdAuthServerState) {
 
     final String thisServerUrl = serverUrlService.determineServerUrl();
     log.debug(
@@ -340,23 +365,26 @@ public class AuthorizationController {
      * Response(in) message nr.11
      */
     final TokenResponse respMsgNr11Body =
-        objectMapper.readValue(
-            Unirest.post(sekIdpTokenEndpoint)
-                .field("grant_type", "authorization_code")
-                .field("code", authorizationCodeFedIdp)
-                .field("code_verifier", session.getFdAuthServerCodeVerifier())
-                .field("client_id", thisServerUrl)
-                .field("redirect_uri", thisServerUrl + FED_AUTH_ENDPOINT)
-                .field(
-                    "client_assertion_type",
-                    "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
-                .field(
-                    "client_assertion", createClientAssertion(thisServerUrl, sekIdpTokenEndpoint))
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-                .asString()
-                .getBody(),
-            TokenResponse.class);
+        JsonMapper.builder()
+            .build()
+            .readValue(
+                Unirest.post(sekIdpTokenEndpoint)
+                    .field("grant_type", "authorization_code")
+                    .field("code", authorizationCodeFedIdp)
+                    .field("code_verifier", session.getFdAuthServerCodeVerifier())
+                    .field("client_id", thisServerUrl)
+                    .field("redirect_uri", session.getFrontendRedirectUri())
+                    .field(
+                        "client_assertion_type",
+                        "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
+                    .field(
+                        "client_assertion",
+                        createClientAssertion(thisServerUrl, sekIdpTokenEndpoint))
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                    .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                    .asString()
+                    .getBody(),
+                TokenResponse.class);
 
     log.debug(
         "App2App-Flow: RX message nr 11 (ID_TOKEN + ACCESS_TOKEN), body: \n{}", respMsgNr11Body);
@@ -370,16 +398,86 @@ public class AuthorizationController {
     final IdpJwe authorizationCodeJwe =
         authorizationCodeBuilder.buildAuthorizationcodeFromSektoralIdToken(
             idTokenDecrypted, ZonedDateTime.now(), session);
-    // return MsgNr12, Authorization code  (for Token-Endpoint)
-    setNoCacheHeader(respMsgNr12);
-    respMsgNr12.setStatus(HttpStatus.FOUND.value());
-    final String tokenLocation =
-        LocationBuilder.createLocationForAuthorizationCode(
-            session.getFrontendRedirectUri(),
-            authorizationCodeJwe.getRawString(),
-            session.getFrontendState());
 
-    respMsgNr12.setHeader(HttpHeaders.LOCATION, tokenLocation);
+    // return MsgNr12, Authorization code  (for Token-Endpoint)
+    final AuthCodeResponse authCodeResponse =
+        AuthCodeResponse.builder()
+            .code(authorizationCodeJwe.getRawString())
+            .state(session.getFrontendState())
+            .build();
+
+    // delete session
+    authSessions.remove(fdAuthServerState);
+
+    return authCodeResponse;
+  }
+
+  @PostMapping(value = TOKEN_ENDPOINT, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  public AccessTokenResponse postAuthorizationCodeAS(
+      @RequestParam(name = "grant_type") @NotEmpty @Pattern(regexp = "authorization_code")
+          final String grantType,
+      @RequestParam(name = "code") @NotEmpty final String authorizationCodeAsEncrypted,
+      @RequestParam(name = "code_verifier") @NotEmpty final String codeVerifier,
+      @RequestParam(name = "client_id") @NotEmpty final String clientId,
+      @RequestParam(name = "redirect_uri") @NotEmpty final String redirectUri) {
+
+    log.debug(
+        "RX message nr.13 at {}, \n"
+            + " grant_type: {}, \n"
+            + " code: {}, \n"
+            + " code_verifier: {}, \n"
+            + " client_id: {}, \n"
+            + " redirect_uri: {}",
+        serverUrlService.determineServerUrl(),
+        grantType,
+        authorizationCodeAsEncrypted,
+        codeVerifier,
+        clientId,
+        redirectUri);
+
+    final String authorizationCodeAsDecrypted =
+        getDecryptedAuthorizationCode(authorizationCodeAsEncrypted, symmetricEncryptionKey);
+
+    final JsonWebToken authorizationCodeAs = new JsonWebToken(authorizationCodeAsDecrypted);
+    authorizationCodeAs.verify(tokenSigPubKey.getPublicKey().orElseThrow());
+
+    final Map<String, Object> authCodeClaims =
+        TokenClaimExtraction.extractClaimsFromJwtBody(authorizationCodeAsDecrypted);
+
+    if (!clientId.equals(authCodeClaims.get("client_id"))) {
+      throw new FdAuthServerException(
+          "Content of parameter client_id is invalid.", HttpStatus.BAD_REQUEST);
+    }
+    if (!redirectUri.equals(authCodeClaims.get("redirect_uri"))) {
+      throw new FdAuthServerException(
+          "Content of parameter redirect_uri is invalid.", HttpStatus.BAD_REQUEST);
+    }
+
+    // validate code_verifier matches code_challenge stored in authorization code
+    if (!authCodeClaims.get("code_challenge").equals(generateCodeChallenge(codeVerifier))) {
+      throw new FdAuthServerException(
+          "Content of parameter code_verifier is invalid.", HttpStatus.BAD_REQUEST);
+    }
+
+    log.debug("App2App-Flow: TX message nr 14");
+    // return MsgNr14, ACCESS_TOKEN
+
+    return AccessTokenResponse.builder()
+        .accessToken(
+            new AccessTokenBuilder(jwtProcessorAccessTokenSigPrivKey, authCodeClaims)
+                .buildAccessToken()
+                .getRawString())
+        .build();
+  }
+
+  private String getDecryptedAuthorizationCode(
+      final String authorizationCodeAsEncrypted, final Key key) {
+    final IdpJwe authorizationCodeJwe = new IdpJwe(authorizationCodeAsEncrypted);
+    final JsonWebToken authCodeDecrypted = authorizationCodeJwe.decryptJwt(key);
+    return JsonParser.parseString(authCodeDecrypted.getRawString())
+        .getAsJsonObject()
+        .get("njwt")
+        .getAsString();
   }
 
   private void verifyIdToken(final JsonWebToken idToken) {
@@ -391,9 +489,8 @@ public class AuthorizationController {
   }
 
   private String createClientAssertion(final String serverUrl, final String sekIdpAuthEndpoint) {
-    return JwtHelper.signJson(
+    return signJson(
         jwtProcessorEsSigPrivKey,
-        objectMapper,
         clientAssertionBuilder.buildClientAssertion(serverUrl, sekIdpAuthEndpoint),
         "JWT");
   }

@@ -52,7 +52,7 @@ See also [GRAS application.yml](gra-server/src/main/resources/application.yml) f
 
 ## License
 
-Copyright 2023-2025 gematik GmbH
+Copyright 2023-2026 gematik GmbH
 
 Apache License, Version 2.0
 

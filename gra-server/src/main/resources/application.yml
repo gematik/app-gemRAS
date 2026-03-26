@@ -36,6 +36,16 @@ fd-auth-server:
     fileName: keys/ref-pubkey.pem
     keyId: puk_token_sig
     use: sig
+  accessTokenSigPrivKeyConfig:
+    fileName: keys/ref-privkey.pem
+    keyId: puk_access_token_sig
+    use: sig
+    x5cInJwks: false
+  accessTokenSigPubKeyConfig:
+    fileName: keys/ref-pubkey.pem
+    keyId: puk_access_token_sig
+    use: sig
+
   symmetricEncryptionKey: "setYourKeyHere"
   serverUrl: "${FD_AUTH_SERVER_URL:http://127.0.0.1:8084}"
   fedmasterUrl: "${FEDMASTER_SERVER_URL:http://127.0.0.1:8083}"
