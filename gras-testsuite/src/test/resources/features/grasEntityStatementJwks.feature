@@ -46,9 +46,9 @@ Feature: Test optional JWKS in Entity Statement of a Relying Party (not applicab
       """
 
 
-  @TCID:RP_SIGNED_JWKS_005
+  @TCID:RP_ES_JWKS_002
   @Approval
-  Scenario: RP SignedJwks - Gutfall - Validiere TLS Key
+  Scenario: RP EntityStatementJwks - Gutfall - Validiere TLS Key
   ```
   Wir rufen das Entity Statement einer Relying Party der Föderation ab
 

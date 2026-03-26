@@ -156,8 +156,9 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
     Then TGR current response at "$.body.body.metadata.federation_entity" matches as JSON:
     """
           {
-            name:                 '.*',
-            ____contacts:             "${json-unit.ignore}",
+            ____name:                 '.*',
+            organization_name:    '.*',
+            ____contacts:         "${json-unit.ignore}",
             ____homepage_uri:     'http.*'
           }
     """

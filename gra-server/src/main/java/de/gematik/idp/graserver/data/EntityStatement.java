@@ -20,13 +20,13 @@
 
 package de.gematik.idp.graserver.data;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import de.gematik.idp.data.IdpJwksDocument;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 /** Entity statement related to Fd-Auth-Server issued by Fachdienst */
 @Getter

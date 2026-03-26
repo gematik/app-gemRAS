@@ -14,16 +14,20 @@ LABEL de.gematik.vendor="gematik GmbH" \
 # SIGTERM = 15 - https://de.wikipedia.org/wiki/Signal_(Unix)
 STOPSIGNAL SIGTERM
 
-HEALTHCHECK CMD curl --fail http://localhost:8080/actuator/health | grep UP || exit 1
+HEALTHCHECK CMD curl --fail http://localhost:8180/actuator/health | grep UP || exit 1
 
 # Default USERID and GROUPID
-ARG USERID=10000
-ARG GROUPID=10000
+ARG USERID=11000
+ARG GROUPID=11000
 
-# Run as User (not root)
-USER $USERID:$GROUPID
+# create user and group for non-root execution
+RUN addgroup --system --gid $GROUPID appgroup \
+ && adduser --system --uid $USERID --ingroup appgroup appuser
 
 COPY --chown=$USERID:$GROUPID gra-server*.jar /app/gra-server.jar
 WORKDIR /app
+
+# Run as User (not root)
+USER $USERID:$GROUPID
 
 CMD ["java", "-jar", "/app/gra-server.jar"]

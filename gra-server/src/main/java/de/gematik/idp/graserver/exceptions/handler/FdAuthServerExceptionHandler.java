@@ -43,6 +43,7 @@ public class FdAuthServerExceptionHandler {
 
   @ExceptionHandler(FdAuthServerException.class)
   public ResponseEntity<GrasErrorResponse> handleGrasException(final FdAuthServerException exc) {
+    log.info("FdAuthServerException: {}", exc.getMessage());
     final GrasErrorResponse body = getBody(exc);
     return new ResponseEntity<>(body, getHeader(), exc.getStatusCode());
   }

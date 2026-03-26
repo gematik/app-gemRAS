@@ -24,6 +24,7 @@ import static de.gematik.idp.graserver.Constants.FED_SIGNED_JWKS_ENDPOINT;
 
 import de.gematik.idp.data.FederationPubKey;
 import de.gematik.idp.data.JwtHelper;
+import de.gematik.idp.graserver.configuration.FdAuthServerConfiguration;
 import de.gematik.idp.graserver.data.EntityStatement;
 import de.gematik.idp.graserver.data.FederationEntity;
 import de.gematik.idp.graserver.data.Metadata;
@@ -40,6 +41,7 @@ public class EntityStatementBuilder {
 
   private static final int ENTITY_STATEMENT_TTL_HOURS = 2;
   private static final int ENTITY_STATEMENT_EXPIRED_HOURS_IN_PAST = 4;
+  @Autowired FdAuthServerConfiguration fdAuthServerConfiguration;
   @Autowired FederationPubKey esSigPubKey;
 
   public EntityStatement buildEntityStatement(final String serverUrl, final String fedmasterUrl) {
@@ -89,13 +91,7 @@ public class EntityStatementBuilder {
             .organizationName("Fachdienst007 des FedIdp POCs")
             .clientName("Fachdienst007")
             .logoUri(serverUrl + "/noLogoYet")
-            .redirectUris(
-                new String[] {
-                  serverUrl + "/auth",
-                  "https://Fachdienst007.de/client",
-                  "https://redirect.testsuite.gsi",
-                  "https://idpfadi.dev.gematik.solutions/auth"
-                })
+            .redirectUris(fdAuthServerConfiguration.getRedirectUris().toArray(new String[0]))
             .responseTypes(new String[] {"code"})
             .clientRegistrationTypes(new String[] {"automatic"})
             .grantTypes(new String[] {"authorization_code"})
@@ -113,7 +109,7 @@ public class EntityStatementBuilder {
             .build();
     final FederationEntity federationEntity =
         FederationEntity.builder()
-            .name("Fachdienst007")
+            .organization_name("gematik")
             .contacts(new String[] {"Support@Fachdienst007.de"})
             .homepageUri("https://Fachdienst007.de")
             .build();

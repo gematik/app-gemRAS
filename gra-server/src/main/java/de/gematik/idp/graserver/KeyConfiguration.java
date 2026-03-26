@@ -75,6 +75,16 @@ public class KeyConfiguration implements KeyConfigurationBase {
   }
 
   @Bean
+  public FederationPrivKey accessTokenSigPrivKey() {
+    return getFederationPrivKey(fdAuthServerConfiguration.getAccessTokenSigPrivKeyConfig());
+  }
+
+  @Bean
+  public FederationPubKey accessTokenSigPubKey() {
+    return getFederationPubkey(fdAuthServerConfiguration.getAccessTokenSigPubKeyConfig());
+  }
+
+  @Bean
   public FederationPrivKey tlsClientPrivKey() {
     return getFederationPrivKeyFromP12(fdAuthServerConfiguration.getTlsClientPrivKeyConfig());
   }
@@ -110,6 +120,12 @@ public class KeyConfiguration implements KeyConfigurationBase {
   public IdpJwtProcessor jwtProcessorTokenSigPrivKey() {
     return new IdpJwtProcessor(
         tokenSigPrivKey().getIdentity().getPrivateKey(), tokenSigPrivKey().getKeyId());
+  }
+
+  @Bean
+  public IdpJwtProcessor jwtProcessorAccessTokenSigPrivKey() {
+    return new IdpJwtProcessor(
+        accessTokenSigPrivKey().getIdentity().getPrivateKey(), accessTokenSigPrivKey().getKeyId());
   }
 
   @Bean

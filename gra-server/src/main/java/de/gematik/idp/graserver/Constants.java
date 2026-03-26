@@ -20,6 +20,8 @@
 
 package de.gematik.idp.graserver;
 
+import de.gematik.idp.field.ClaimName;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -34,4 +36,11 @@ public final class Constants {
       "/invalid_sig_entity_statement";
   public static final int FD_AUTH_SERVER_STATE_LENGTH = 32;
   public static final int FD_AUTH_SERVER_NONCE_LENGTH = 32;
+
+  public static final Set<ClaimName> ESSENTIAL_CLAIMS = Set.of(ClaimName.TELEMATIK_ID);
+  public static final Set<ClaimName> OPTIONAL_CLAIMS =
+      Set.of(
+          ClaimName.TELEMATIK_PROFESSION,
+          ClaimName.TELEMATIK_ORGANIZATION,
+          ClaimName.TELEMATIK_DISPLAY_NAME);
 }

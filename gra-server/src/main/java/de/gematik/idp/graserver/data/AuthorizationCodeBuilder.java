@@ -26,34 +26,25 @@ import static de.gematik.idp.field.ClaimName.AUTH_TIME;
 import static de.gematik.idp.field.ClaimName.CLIENT_ID;
 import static de.gematik.idp.field.ClaimName.CODE_CHALLENGE;
 import static de.gematik.idp.field.ClaimName.CODE_CHALLENGE_METHOD;
-import static de.gematik.idp.field.ClaimName.DISPLAY_NAME;
-import static de.gematik.idp.field.ClaimName.FAMILY_NAME;
-import static de.gematik.idp.field.ClaimName.GIVEN_NAME;
-import static de.gematik.idp.field.ClaimName.ID_NUMBER;
 import static de.gematik.idp.field.ClaimName.ISSUED_AT;
 import static de.gematik.idp.field.ClaimName.ISSUER;
 import static de.gematik.idp.field.ClaimName.JWT_ID;
 import static de.gematik.idp.field.ClaimName.NONCE;
-import static de.gematik.idp.field.ClaimName.ORGANIZATION_NAME;
-import static de.gematik.idp.field.ClaimName.PROFESSION_OID;
 import static de.gematik.idp.field.ClaimName.REDIRECT_URI;
 import static de.gematik.idp.field.ClaimName.RESPONSE_TYPE;
 import static de.gematik.idp.field.ClaimName.SCOPE;
 import static de.gematik.idp.field.ClaimName.SERVER_NONCE;
 import static de.gematik.idp.field.ClaimName.STATE;
-import static de.gematik.idp.field.ClaimName.TELEMATIK_DISPLAY_NAME;
-import static de.gematik.idp.field.ClaimName.TELEMATIK_ID;
-import static de.gematik.idp.field.ClaimName.TELEMATIK_ORGANIZATION;
-import static de.gematik.idp.field.ClaimName.TELEMATIK_PROFESSION;
 import static de.gematik.idp.field.ClaimName.TOKEN_TYPE;
 import static de.gematik.idp.field.ClaimName.TYPE;
+import static de.gematik.idp.graserver.Constants.ESSENTIAL_CLAIMS;
+import static de.gematik.idp.graserver.Constants.OPTIONAL_CLAIMS;
 
 import de.gematik.idp.IdpConstants;
 import de.gematik.idp.authentication.IdpJwtProcessor;
 import de.gematik.idp.authentication.JwtBuilder;
 import de.gematik.idp.crypto.Nonce;
-import de.gematik.idp.exceptions.IdpJoseException;
-import de.gematik.idp.field.ClaimName;
+import de.gematik.idp.graserver.exceptions.FdAuthServerException;
 import de.gematik.idp.token.IdpJwe;
 import de.gematik.idp.token.JsonWebToken;
 import java.security.Key;
@@ -62,11 +53,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 
 @AllArgsConstructor
 public class AuthorizationCodeBuilder {
 
-  private final IdpJwtProcessor jwtProcessorTokenKey;
+  private final IdpJwtProcessor jwtProcessorTokenSigPrivKey;
   private final Key encryptionKey;
   private final String issuerUrl;
 
@@ -76,18 +68,8 @@ public class AuthorizationCodeBuilder {
       final AuthSession authSession) {
 
     final Map<String, Object> claimsMap = new HashMap<>();
-
-    claimsMap.put(
-        DISPLAY_NAME.getJoseName(), extractClaimFromIdToken(idTokenPlain, TELEMATIK_DISPLAY_NAME));
-
-    claimsMap.put(ID_NUMBER.getJoseName(), extractClaimFromIdToken(idTokenPlain, TELEMATIK_ID));
-    claimsMap.put(
-        PROFESSION_OID.getJoseName(), extractClaimFromIdToken(idTokenPlain, TELEMATIK_PROFESSION));
-    claimsMap.put(
-        ORGANIZATION_NAME.getJoseName(),
-        extractClaimFromIdToken(idTokenPlain, TELEMATIK_ORGANIZATION));
-
-    addFamNameAndGivenNameForScopeERezept(claimsMap);
+    addOptionalClaimsFromSektoralIdTokenToAuthCode(idTokenPlain, claimsMap);
+    addEssentialClaimsFromSektoralIdTokenToAuthCode(idTokenPlain, claimsMap);
 
     claimsMap.put(CODE_CHALLENGE.getJoseName(), authSession.getFrontendCodeChallenge());
     claimsMap.put(
@@ -117,7 +99,7 @@ public class AuthorizationCodeBuilder {
     final Map<String, Object> headerMap = new HashMap<>();
     headerMap.put(TYPE.getJoseName(), "JWT");
 
-    return jwtProcessorTokenKey
+    return jwtProcessorTokenSigPrivKey
         .buildJwt(
             new JwtBuilder()
                 .addAllHeaderClaims(headerMap)
@@ -130,17 +112,26 @@ public class AuthorizationCodeBuilder {
    *A_22271-01 states that for the erezept auth server these claims are to be included with an empty
    * string as the value
    */
-  private static void addFamNameAndGivenNameForScopeERezept(final Map<String, Object> claimsMap) {
-    claimsMap.put(GIVEN_NAME.getJoseName(), "");
-    claimsMap.put(FAMILY_NAME.getJoseName(), "");
+
+  private static void addOptionalClaimsFromSektoralIdTokenToAuthCode(
+      final JsonWebToken idToken, final Map<String, Object> claimsMap) {
+    OPTIONAL_CLAIMS.stream()
+        .filter(claim -> idToken.getBodyClaim(claim).isPresent())
+        .forEach(claim -> claimsMap.put(claim.getJoseName(), idToken.getBodyClaim(claim).get()));
   }
 
-  private Object extractClaimFromIdToken(final JsonWebToken idToken, final ClaimName claimName) {
-    return idToken
-        .getBodyClaim(claimName)
-        .orElseThrow(
-            () ->
-                new IdpJoseException(
-                    "Unexpected structure in ID-Token, claim " + claimName + " not found."));
+  private static void addEssentialClaimsFromSektoralIdTokenToAuthCode(
+      final JsonWebToken idToken, final Map<String, Object> claimsMap) {
+    ESSENTIAL_CLAIMS.forEach(
+        claim ->
+            claimsMap.put(
+                claim.getJoseName(),
+                idToken
+                    .getBodyClaim(claim)
+                    .orElseThrow(
+                        () ->
+                            new FdAuthServerException(
+                                "essential claim " + claim.getJoseName() + " not found.",
+                                HttpStatus.BAD_REQUEST))));
   }
 }

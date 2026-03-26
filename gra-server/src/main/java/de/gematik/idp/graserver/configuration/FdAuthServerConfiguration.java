@@ -21,6 +21,7 @@
 package de.gematik.idp.graserver.configuration;
 
 import de.gematik.idp.data.KeyConfig;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -45,6 +46,8 @@ public class FdAuthServerConfiguration {
   private KeyConfig esSigPubKeyConfig;
   private KeyConfig tokenSigPrivKeyConfig;
   private KeyConfig tokenSigPubKeyConfig;
+  private KeyConfig accessTokenSigPrivKeyConfig;
+  private KeyConfig accessTokenSigPubKeyConfig;
   private KeyConfig encPrivKeyConfig;
   private KeyConfig encPubKeyConfig;
   private KeyConfig tlsClientPrivKeyConfig;
@@ -53,4 +56,5 @@ public class FdAuthServerConfiguration {
   private String fedmasterUrl;
   private String fedmasterSigPubKeyFilePath;
   private String clientId;
+  private List<String> redirectUris;
 }

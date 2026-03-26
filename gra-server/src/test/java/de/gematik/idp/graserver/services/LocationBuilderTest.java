@@ -27,8 +27,9 @@ import de.gematik.idp.graserver.exceptions.FdAuthServerException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.NONE)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LocationBuilderTest {
 
@@ -46,22 +47,6 @@ class LocationBuilderTest {
             () ->
                 LocationBuilder.createLocationForAuthorizationRequest(
                     "myInvalidRedirect_\\", "myClient", "myReqUri"))
-        .isInstanceOf(FdAuthServerException.class);
-  }
-
-  @Test
-  void createLocationForAuthorizationCode() {
-    assertThat(
-            LocationBuilder.createLocationForAuthorizationCode("myRedirect", "myCode", "myState"))
-        .isNotEmpty();
-  }
-
-  @Test
-  void createLocationForAuthorizationCode_Exception() {
-    assertThatThrownBy(
-            () ->
-                LocationBuilder.createLocationForAuthorizationCode(
-                    "myInvalidRedirect_\\", "myCode", "myState"))
         .isInstanceOf(FdAuthServerException.class);
   }
 }

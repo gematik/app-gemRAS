@@ -39,7 +39,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EntityListService {
+public class IdpEntityListService {
 
   private static final String OLD_DEFAULT_ENTITY_LIST_AS_JWS =
       "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InB1a19mZWRfc2lnIn0.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjY0MDc3IiwiaWF0IjoxNjY1MTM3MjY0LCJleHAiOjE2NjUxMzcyNjUsImlkcF9lbnRpdHkiOlt7Im9yZ2FuaXphdGlvbl9uYW1lIjoiSURQX1NFS1RPUkFMIiwiaXNzIjoiaHR0cDovLzEyNy4wLjAuMTo4MDgyIiwibG9nb191cmkiOiJ0b2RvLWxvZ28iLCJ1c2VyX3R5cGVfc3VwcG9ydGVkIjoiSVAifV19.da166z60dpM4C6plZu-cha38jivMGLjJhF8Gb1fe8uUwNcx-yjZh_dexqe_NoszT6LJVpGSdhuRe60ow5RJCOw";
@@ -47,11 +47,11 @@ public class EntityListService {
   private String entityListAsJws = OLD_DEFAULT_ENTITY_LIST_AS_JWS;
 
   public String getEntityList() {
-    updateEntityListIfExpiredAndNewIsAvailable();
+    updateIdpEntityListIfExpiredAndNewIsAvailable();
     return entityListAsJws;
   }
 
-  private void updateEntityListIfExpiredAndNewIsAvailable() {
+  private void updateIdpEntityListIfExpiredAndNewIsAvailable() {
     final Map<String, Object> bodyClaims = new JsonWebToken(entityListAsJws).getBodyClaims();
     final Long exp = (Long) bodyClaims.get("exp");
     if (isExpired(exp)) {

@@ -20,163 +20,176 @@
 
 package de.gematik.idp.graserver.services;
 
-import static de.gematik.idp.graserver.common.TestConstants.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STATEMENT_FROM_IDP_EXPIRED;
+import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STMNT_ABOUT_IDP_EXPIRED;
+import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043;
+import static de.gematik.idp.graserver.common.TestConstants.ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043;
+import static de.gematik.idp.graserver.common.TestConstants.SIGNED_JWKS_IDP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
 import de.gematik.idp.IdpConstants;
 import de.gematik.idp.graserver.ServerUrlService;
-import de.gematik.idp.graserver.configuration.FdAuthServerConfiguration;
 import de.gematik.idp.graserver.exceptions.FdAuthServerException;
 import de.gematik.idp.token.JsonWebToken;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.jose4j.jwk.JsonWebKeySet;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.model.MediaType;
-import org.mockserver.springtest.MockServerTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles("mock-serverUrlService")
 @Slf4j
-@MockServerTest("server.url=http://localhost:${mockServerPort}")
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.NONE)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class EntityStmntIdpsServiceTest {
 
-  @Value("${server.url}")
-  private String mockServerUrl;
-
-  private MockServerClient mockServerClient;
-  @Autowired EntityStmntIdpsService entityStmntIdpsService;
-  @Autowired FdAuthServerConfiguration fdAuthServerConfiguration;
-  @Autowired ServerUrlService serverUrlService;
-
+  private static final String MOCK_SERVER_URL_IDP = "http://localhost:8085";
+  private static final int MOCK_SERVER_PORT_IDP = 8085;
   private static final JsonWebToken ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043_JWT =
       new JsonWebToken(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043);
   private static final JsonWebToken ENTITY_STATEMENT_IDP_EXPIRED_JWT =
       new JsonWebToken(ENTITY_STATEMENT_FROM_IDP_EXPIRED);
-
   private static final JsonWebToken ENTITY_STATEMENT_ABOUT_IDP_EXPIRED_JWT =
       new JsonWebToken(ENTITY_STMNT_ABOUT_IDP_EXPIRED);
 
+  @Autowired EntityStmntIdpsService entityStmntIdpsService;
+  @Autowired ServerUrlService serverUrlService;
+  private WireMockServer wireMockServerIdp;
+
+  @BeforeAll
+  void setupMock() {
+    wireMockServerIdp = new WireMockServer(MOCK_SERVER_PORT_IDP);
+    wireMockServerIdp.start();
+  }
+
   @BeforeEach
   void setup() {
+    wireMockServerIdp.resetAll();
     entityStmntIdpsService.clearEntityStatements();
+  }
+
+  @AfterAll
+  void tearDown() {
+    wireMockServerIdp.stop();
   }
 
   @Test
   void getEntityStatementIdp() {
-    Mockito.doReturn(mockServerUrl + "/federation/fetch")
+    Mockito.doReturn(MOCK_SERVER_URL_IDP + "/federation/fetch")
         .when(serverUrlService)
         .determineFetchEntityStatementEndpoint();
-    mockServerClient
-        .when(request().withMethod("GET").withPath(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043));
-    mockServerClient
-        .when(request().withMethod("GET").withPath("/federation/fetch"))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043));
-    fdAuthServerConfiguration.setFedmasterUrl(mockServerUrl);
-    final JsonWebToken entStmntIdp = entityStmntIdpsService.getEntityStatementIdp(mockServerUrl);
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043)));
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo("/federation/fetch"))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043)));
+    final JsonWebToken entStmntIdp =
+        entityStmntIdpsService.getEntityStatementIdp(MOCK_SERVER_URL_IDP);
     assertThat(entStmntIdp).isNotNull();
   }
 
   @Test
   void testUpdateStatementIdpIfExpiredAndNewIsAvailable() {
     // bring in an expired entity statement
-    entityStmntIdpsService.putEntityStatementIdp(mockServerUrl, ENTITY_STATEMENT_IDP_EXPIRED_JWT);
+    entityStmntIdpsService.putEntityStatementIdp(
+        MOCK_SERVER_URL_IDP, ENTITY_STATEMENT_IDP_EXPIRED_JWT);
 
     // server has to fetch the entity statement because it is expired
-    Mockito.doReturn(mockServerUrl + "/federation/fetch")
+    Mockito.doReturn(MOCK_SERVER_URL_IDP + "/federation/fetch")
         .when(serverUrlService)
         .determineFetchEntityStatementEndpoint();
-    mockServerClient
-        .when(request().withMethod("GET").withPath(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043));
-    mockServerClient
-        .when(request().withMethod("GET").withPath("/federation/fetch"))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043));
-    fdAuthServerConfiguration.setFedmasterUrl(mockServerUrl);
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043)));
 
-    assertThat(entityStmntIdpsService.getEntityStatementIdp(mockServerUrl).getRawString())
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo("/federation/fetch"))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043)));
+
+    assertThat(entityStmntIdpsService.getEntityStatementIdp(MOCK_SERVER_URL_IDP).getRawString())
         .isEqualTo(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043);
   }
 
   @Test
   void testUpdateStatementAboutIdpIfExpiredAndNewIsAvailable() {
-    // bring in an expired entity statement
+    // insert an expired entity statement
     entityStmntIdpsService.putEntityStatementAboutIdp(
-        mockServerUrl, ENTITY_STATEMENT_ABOUT_IDP_EXPIRED_JWT);
+        MOCK_SERVER_URL_IDP, ENTITY_STATEMENT_ABOUT_IDP_EXPIRED_JWT);
 
-    Mockito.doReturn(mockServerUrl + "/federation/fetch")
+    Mockito.doReturn(MOCK_SERVER_URL_IDP + "/federation/fetch")
         .when(serverUrlService)
         .determineFetchEntityStatementEndpoint();
-    mockServerClient
-        .when(request().withMethod("GET").withPath(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043));
-    // server has to fetch the entity statement because it is expired
-    mockServerClient
-        .when(request().withMethod("GET").withPath("/federation/fetch"))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043));
-    fdAuthServerConfiguration.setFedmasterUrl(mockServerUrl);
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043)));
 
-    assertThat(entityStmntIdpsService.getEntityStatementIdp(mockServerUrl).getRawString())
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo("/federation/fetch"))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043)));
+    // server has to fetch the entity statement because it is expired
+
+    assertThat(entityStmntIdpsService.getEntityStatementIdp(MOCK_SERVER_URL_IDP).getRawString())
         .isEqualTo(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043);
   }
 
   @Test
   void fetchEntityStatementIdp_answerNot200() {
-    assertThatThrownBy(() -> entityStmntIdpsService.getEntityStatementIdp(mockServerUrl))
+    assertThatThrownBy(() -> entityStmntIdpsService.getEntityStatementIdp(MOCK_SERVER_URL_IDP))
         .isInstanceOf(FdAuthServerException.class)
         .hasMessageContaining("No entity statement from IDP");
   }
 
   @Test
   void fetchEntityStatementAboutIdp_answerNot200() {
-    Mockito.doReturn(mockServerUrl + "/42").when(serverUrlService).determineFedmasterUrl();
-    Mockito.doReturn(mockServerUrl + "/federation/fetch")
+    Mockito.doReturn(MOCK_SERVER_URL_IDP + "/42").when(serverUrlService).determineFedmasterUrl();
+    Mockito.doReturn(MOCK_SERVER_URL_IDP + "/federation/fetch")
         .when(serverUrlService)
         .determineFetchEntityStatementEndpoint();
-    mockServerClient
-        .when(request().withMethod("GET").withPath("/federation/fetch"))
-        .respond(response().withStatusCode(500));
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo("/federation/fetch"))
+            .willReturn(aResponse().withStatus(HttpStatus.INTERNAL_SERVER_ERROR.value())));
 
-    assertThatThrownBy(() -> entityStmntIdpsService.getEntityStatementAboutIdp(mockServerUrl))
+    assertThatThrownBy(() -> entityStmntIdpsService.getEntityStatementAboutIdp(MOCK_SERVER_URL_IDP))
         .isInstanceOf(FdAuthServerException.class)
         .hasMessageContaining("No entity statement for IDP");
   }
@@ -185,27 +198,27 @@ class EntityStmntIdpsServiceTest {
   void getAuthorizationEndpoint() {
     final String expectedAuthorizationEndpoint = "http://localhost:8085/auth";
 
-    Mockito.doReturn(mockServerUrl + "/federation/fetch")
+    Mockito.doReturn(MOCK_SERVER_URL_IDP + "/federation/fetch")
         .when(serverUrlService)
         .determineFetchEntityStatementEndpoint();
 
-    mockServerClient
-        .when(request().withMethod("GET").withPath(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043));
-    mockServerClient
-        .when(request().withMethod("GET").withPath("/federation/fetch"))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043));
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043)));
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo("/federation/fetch"))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043)));
     assertThat(
             entityStmntIdpsService.getAuthorizationEndpoint(
-                entityStmntIdpsService.getEntityStatementIdp(mockServerUrl)))
+                entityStmntIdpsService.getEntityStatementIdp(MOCK_SERVER_URL_IDP)))
         .isEqualTo(expectedAuthorizationEndpoint);
   }
 
@@ -219,35 +232,35 @@ class EntityStmntIdpsServiceTest {
   @Test
   void testGetSignedJwksIdp() {
 
-    Mockito.doReturn(mockServerUrl + "/federation/fetch")
+    Mockito.doReturn(MOCK_SERVER_URL_IDP + "/federation/fetch")
         .when(serverUrlService)
         .determineFetchEntityStatementEndpoint();
 
-    Mockito.doReturn(Optional.of(mockServerUrl + "/jws.json"))
+    Mockito.doReturn(Optional.of(MOCK_SERVER_URL_IDP + "/jws.json"))
         .when(serverUrlService)
         .determineSignedJwksUri(any());
-    mockServerClient
-        .when(request().withMethod("GET").withPath(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043));
-    mockServerClient
-        .when(request().withMethod("GET").withPath("/federation/fetch"))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043));
-    mockServerClient
-        .when(request().withMethod("GET").withPath("/jws.json"))
-        .respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(SIGNED_JWKS_IDP));
-    final JsonWebKeySet jwks = entityStmntIdpsService.getSignedJwksIdp(mockServerUrl);
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo(IdpConstants.ENTITY_STATEMENT_ENDPOINT))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_IDP_EXPIRES_IN_YEAR_2043)));
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo("/federation/fetch"))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(ENTITY_STMNT_ABOUT_IDP_EXPIRES_IN_YEAR_2043)));
+    wireMockServerIdp.stubFor(
+        get(urlPathEqualTo("/jws.json"))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.OK.value())
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(SIGNED_JWKS_IDP)));
+    final JsonWebKeySet jwks = entityStmntIdpsService.getSignedJwksIdp(MOCK_SERVER_URL_IDP);
     assertThat(jwks).isNotNull();
     assertThat(jwks.findJsonWebKey("puk_fed_idp_token", "EC", "sig", "ES256")).isNotNull();
     assertThat(jwks.findJsonWebKey("puk_idp_sig", "EC", "sig", "ES256")).isNotNull();

@@ -45,15 +45,4 @@ public final class LocationBuilder {
       throw new FdAuthServerException(e);
     }
   }
-
-  public static String createLocationForAuthorizationCode(
-      final String redirectUri, final String code, final String state) {
-    try {
-      final URIBuilder redirectUriBuilder = new URIBuilder(redirectUri);
-      redirectUriBuilder.addParameter("code", code).addParameter("state", state);
-      return redirectUriBuilder.build().toString();
-    } catch (final URISyntaxException e) {
-      throw new FdAuthServerException(e);
-    }
-  }
 }

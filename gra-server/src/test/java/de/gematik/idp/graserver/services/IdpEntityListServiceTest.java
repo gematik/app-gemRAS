@@ -28,12 +28,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.NONE)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class EntityListServiceTest {
+class IdpEntityListServiceTest {
 
-  @Autowired EntityListService entityListService;
+  @Autowired IdpEntityListService idpEntityListService;
 
   /**
    * @formatter:off "idp_entity": [ { "name": "IDP_SEKTORAL", "iss": "http://127.0.0.1:8082",
@@ -42,13 +43,13 @@ class EntityListServiceTest {
    */
   @Test
   void getEntityList() {
-    assertThat(entityListService.getEntityList()).isNotEmpty();
+    assertThat(idpEntityListService.getEntityList()).isNotEmpty();
   }
 
   @Test
   void issTest() {
     final Map<String, Object> bodyClaims =
-        new JsonWebToken(entityListService.getEntityList()).extractBodyClaims();
+        new JsonWebToken(idpEntityListService.getEntityList()).extractBodyClaims();
     final String iss = (String) bodyClaims.get("iss");
     assertThat(iss).containsPattern("http");
   }

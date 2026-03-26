@@ -24,7 +24,7 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
   Background: Initialisiere Testkontext durch Abfrage des Entity Statements
     When TGR sende eine leere GET Anfrage an "${tiger.fachdienstEntityStatementEndpoint}"
     And TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
-    Then TGR set local variable "signed_jwks_uri" to "!{rbel:currentResponseAsString('$..signed_jwks_uri')}"
+    Then TGR set local variable "signed_jwks_uri" to "http://graserver!{rbel:currentResponseAsString('$..signed_jwks_uri.path')}"
 
 
   @TCID:RP_SIGNED_JWKS_001
@@ -123,7 +123,7 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
     Given TGR clear recorded messages
     When TGR sende eine leere GET Anfrage an "${signed_jwks_uri}"
     And TGR find first request to path ".*"
-    Then TGR current response at "$.body.body.keys.[?((@.use.content == 'sig') && ( @.x5c.0.content =~ '.*') && ( @.kid.content == "puk_tls_sig"))]" matches as JSON:
+    Then TGR current response at "$.body.body.keys.[?((@.use.content == 'sig') && ( @.x5c.0.content =~ '.*') && ( @.kid.content == 'puk_tls_sig'))]" matches as JSON:
       """
         {
           use:                           'sig',
@@ -136,7 +136,7 @@ Feature: Test optional signed JWKS of a Relying Party (i.e. GRAS)
           x5c:                           "${json-unit.ignore}"
         }
       """
-    And TGR current response at "$.body.body.keys.[?((@.use.content == 'sig') && ( @.x5c.0.content =~ '.*') && ( @.kid.content == "puk_tls_sig_rotation"))]" matches as JSON:
+    And TGR current response at "$.body.body.keys.[?((@.use.content == 'sig') && ( @.x5c.0.content =~ '.*') && ( @.kid.content == 'puk_tls_sig_rotation'))]" matches as JSON:
       """
           {
             use:                           'sig',
