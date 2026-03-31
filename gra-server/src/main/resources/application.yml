@@ -50,6 +50,9 @@ fd-auth-server:
   serverUrl: "${FD_AUTH_SERVER_URL:http://127.0.0.1:8084}"
   fedmasterUrl: "${FEDMASTER_SERVER_URL:http://127.0.0.1:8083}"
   fedmasterSigPubKeyFilePath: "keys/ref-fedmaster-sig-pubkey.pem"
+  redirectUris:
+    - "https://Fachdienst007.de/client"
+    - "https://redirect.testsuite.gsi"
 server:
   port: ${SERVER_PORT:8084}
 management:
