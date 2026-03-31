@@ -1,3 +1,8 @@
+# Release 5.2.1
+
+- fix unit tests
+- update dependencies
+
 # Release 5.2.0
 
 - migrate to spring boot 4.0.x

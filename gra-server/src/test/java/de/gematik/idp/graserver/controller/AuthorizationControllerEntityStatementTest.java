@@ -27,14 +27,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.idp.IdpConstants;
-import de.gematik.idp.crypto.CryptoLoader;
+import de.gematik.idp.data.FederationPubKey;
 import de.gematik.idp.exceptions.IdpJwtSignatureInvalidException;
 import de.gematik.idp.field.ClaimName;
 import de.gematik.idp.token.JsonWebToken;
-import java.io.File;
 import java.io.IOException;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -42,10 +39,10 @@ import java.util.Objects;
 import kong.unirest.core.HttpResponse;
 import kong.unirest.core.HttpStatus;
 import kong.unirest.core.Unirest;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpHeaders;
@@ -79,14 +76,13 @@ class AuthorizationControllerEntityStatementTest {
           "scope",
           "ti_features_supported");
 
-  private static final String SERVER_CERT_FILE = "src/test/resources/fachdienst-sig.pem";
+  @Autowired FederationPubKey esSigPubKey;
 
   @LocalServerPort private int localServerPort;
   private String testHostUrl;
   private HttpResponse<String> responseGood;
   private JsonWebToken jwtInResponseGood;
   private Map<String, Object> bodyClaims;
-  private X509Certificate serverCertificate;
 
   @BeforeAll
   void setup() throws IOException {
@@ -95,14 +91,11 @@ class AuthorizationControllerEntityStatementTest {
     assertThat(responseGood.getStatus()).isEqualTo(HttpStatus.OK);
     jwtInResponseGood = new JsonWebToken(responseGood.getBody());
     bodyClaims = jwtInResponseGood.extractBodyClaims();
-    this.serverCertificate =
-        CryptoLoader.getCertificateFromPem(
-            FileUtils.readFileToByteArray(new File(SERVER_CERT_FILE)));
   }
 
   @Test
   void entityStatementResponse_ContentTypeEntityStatement() {
-    assertThat(responseGood.getHeaders().get(HttpHeaders.CONTENT_TYPE).get(0))
+    assertThat(responseGood.getHeaders().get(HttpHeaders.CONTENT_TYPE).getFirst())
         .isEqualTo("application/entity-statement+jwt;charset=UTF-8");
   }
 
@@ -294,7 +287,7 @@ class AuthorizationControllerEntityStatementTest {
     final HttpResponse<String> httpResponse =
         Unirest.get(testHostUrl + IdpConstants.ENTITY_STATEMENT_ENDPOINT).asString();
     final JsonWebToken entityStatement = new JsonWebToken(httpResponse.getBody());
-    entityStatement.verify(serverCertificate.getPublicKey());
+    entityStatement.verify(esSigPubKey.getPublicKey().orElseThrow());
   }
 
   @Test
@@ -303,8 +296,10 @@ class AuthorizationControllerEntityStatementTest {
         Unirest.get(testHostUrl + ENTITY_STATEMENT_INVALID_SIG_ENDPOINT).asString();
     final JsonWebToken entityStatementWithInvalidSignature =
         new JsonWebToken(httpResponse.getBody());
-    final PublicKey publicKey = serverCertificate.getPublicKey();
-    assertThatThrownBy(() -> entityStatementWithInvalidSignature.verify(publicKey))
+    assertThatThrownBy(
+            () ->
+                entityStatementWithInvalidSignature.verify(
+                    esSigPubKey.getPublicKey().orElseThrow()))
         .isInstanceOf(IdpJwtSignatureInvalidException.class);
   }
 }

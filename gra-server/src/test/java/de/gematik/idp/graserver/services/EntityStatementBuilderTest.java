@@ -20,46 +20,29 @@
 
 package de.gematik.idp.graserver.services;
 
-import static de.gematik.idp.IdpConstants.ENTITY_STATEMENT_TYP;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-import de.gematik.idp.authentication.IdpJwtProcessor;
-import de.gematik.idp.graserver.configuration.FdAuthServerConfiguration;
-import java.time.ZonedDateTime;
-import java.util.Map;
+import de.gematik.idp.graserver.common.EntityStatementGenerator;
+import de.gematik.idp.graserver.common.EntityStatementGenerator.TestConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import tools.jackson.databind.json.JsonMapper;
+import org.springframework.context.annotation.Import;
 
 @Slf4j
 @SpringBootTest(webEnvironment = WebEnvironment.NONE)
+@Import(TestConfig.class)
 class EntityStatementBuilderTest {
 
-  @Autowired private IdpJwtProcessor jwtProcessorEsSigPrivKey;
-  @Autowired private EntityStatementBuilder entityStatementBuilder;
-  @Autowired private FdAuthServerConfiguration fdAuthServerConfiguration;
+  @Autowired EntityStatementGenerator entityStatementGenerator;
 
   @Test
   void generateEntityStatementValid20Years() {
     final int entityStatementTtlYears = 20;
-    final long nowPlus20Years =
-        ZonedDateTime.now().plusYears(entityStatementTtlYears).toEpochSecond();
     final String es =
-        jwtProcessorEsSigPrivKey
-            .buildJws(
-                JsonMapper.builder()
-                    .build()
-                    .writeValueAsString(
-                        entityStatementBuilder.buildEntityStatement(
-                            "http://localhost:8084",
-                            fdAuthServerConfiguration.getFedmasterUrl(),
-                            nowPlus20Years)),
-                Map.ofEntries(Map.entry("typ", ENTITY_STATEMENT_TYP)),
-                false)
-            .getRawString();
+        entityStatementGenerator.generateEntityStatementValid(entityStatementTtlYears);
 
     assertThat(es).isNotEmpty();
     log.info("Entity statement (valid {} years):\n{}", entityStatementTtlYears, es);
