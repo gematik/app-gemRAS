@@ -23,13 +23,11 @@ package de.gematik.idp.graserver.data;
 import static de.gematik.idp.field.ClaimName.AUTHENTICATION_CLASS_REFERENCE;
 import static de.gematik.idp.field.ClaimName.AUTHENTICATION_METHODS_REFERENCE;
 import static de.gematik.idp.field.ClaimName.AUTH_TIME;
-import static de.gematik.idp.field.ClaimName.CLIENT_ID;
 import static de.gematik.idp.field.ClaimName.CODE_CHALLENGE;
 import static de.gematik.idp.field.ClaimName.CODE_CHALLENGE_METHOD;
 import static de.gematik.idp.field.ClaimName.ISSUED_AT;
 import static de.gematik.idp.field.ClaimName.ISSUER;
 import static de.gematik.idp.field.ClaimName.JWT_ID;
-import static de.gematik.idp.field.ClaimName.NONCE;
 import static de.gematik.idp.field.ClaimName.REDIRECT_URI;
 import static de.gematik.idp.field.ClaimName.RESPONSE_TYPE;
 import static de.gematik.idp.field.ClaimName.SCOPE;
@@ -74,10 +72,6 @@ public class AuthorizationCodeBuilder {
     claimsMap.put(CODE_CHALLENGE.getJoseName(), authSession.getFrontendCodeChallenge());
     claimsMap.put(
         CODE_CHALLENGE_METHOD.getJoseName(), authSession.getFrontendCodeChallengeMethod());
-    if (authSession.getFrontendNonce() != null) {
-      claimsMap.put(NONCE.getJoseName(), authSession.getFrontendNonce());
-    }
-    claimsMap.put(CLIENT_ID.getJoseName(), authSession.getFrontendClientId());
     claimsMap.put(REDIRECT_URI.getJoseName(), authSession.getFrontendRedirectUri());
     claimsMap.put(SCOPE.getJoseName(), authSession.getFrontendScope());
     claimsMap.put(ISSUED_AT.getJoseName(), issueingTime.toEpochSecond());

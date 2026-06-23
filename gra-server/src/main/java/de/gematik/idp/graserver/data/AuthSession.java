@@ -33,8 +33,6 @@ import lombok.Setter;
 @Builder
 public class AuthSession {
 
-  // outer session related artifacts taken from app request
-  private final String frontendClientId;
   // is part of message 12 of App2App flow
   private final String frontendState;
   private final String frontendRedirectUri;
@@ -44,7 +42,6 @@ public class AuthSession {
   private final String frontendScope;
   // Fd-Auth-Server, inner session related artifacts
   private final String fdAuthServerCodeVerifier;
-  private final String frontendNonce;
   private final String idpIss;
   @Setter private String fdAuthServerAuthorizationCode;
 }

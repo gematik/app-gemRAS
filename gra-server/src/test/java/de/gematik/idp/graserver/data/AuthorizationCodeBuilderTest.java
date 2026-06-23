@@ -23,7 +23,6 @@ package de.gematik.idp.graserver.data;
 import static de.gematik.idp.field.ClaimName.AUTHENTICATION_CLASS_REFERENCE;
 import static de.gematik.idp.field.ClaimName.AUTHENTICATION_METHODS_REFERENCE;
 import static de.gematik.idp.field.ClaimName.AUTH_TIME;
-import static de.gematik.idp.field.ClaimName.CLIENT_ID;
 import static de.gematik.idp.field.ClaimName.CODE_CHALLENGE;
 import static de.gematik.idp.field.ClaimName.CODE_CHALLENGE_METHOD;
 import static de.gematik.idp.field.ClaimName.EXPIRES_AT;
@@ -98,7 +97,6 @@ class AuthorizationCodeBuilderTest {
             EXPIRES_AT.getJoseName(),
             CODE_CHALLENGE.getJoseName(),
             CODE_CHALLENGE_METHOD.getJoseName(),
-            CLIENT_ID.getJoseName(),
             REDIRECT_URI.getJoseName(),
             SCOPE.getJoseName(),
             ISSUED_AT.getJoseName(),
@@ -140,7 +138,6 @@ class AuthorizationCodeBuilderTest {
 
   private static AuthSession getAuthSession() {
     return AuthSession.builder()
-        .frontendClientId("frontendClientId")
         .frontendCodeChallenge("frontendCodeChallenge")
         .frontendCodeChallengeMethod("frontendCodeChallengeMethod")
         .frontendState("frontendState")
