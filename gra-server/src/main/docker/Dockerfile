@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre
+FROM gematik1/osadl-alpine-openjdk21-jre:1.0.12@sha256:c555a8bc3f15bbd957c99486ac8100539ac6021089612401aa646b12f7f6698f
 
 ARG COMMIT_HASH
 ARG VERSION
@@ -14,15 +14,19 @@ LABEL de.gematik.vendor="gematik GmbH" \
 # SIGTERM = 15 - https://de.wikipedia.org/wiki/Signal_(Unix)
 STOPSIGNAL SIGTERM
 
-HEALTHCHECK CMD curl --fail http://localhost:8180/actuator/health | grep UP || exit 1
+HEALTHCHECK --interval=15s \
+            --timeout=10s \
+            --start-period=30s \
+            --retries=3 \
+  CMD ["/usr/bin/wget", "--quiet", "--tries=1", "--spider", \
+       "http://localhost:8180/actuator/health"]
 
 # Default USERID and GROUPID
 ARG USERID=11000
 ARG GROUPID=11000
 
-# create user and group for non-root execution
-RUN addgroup --system --gid $GROUPID appgroup \
- && adduser --system --uid $USERID --ingroup appgroup appuser
+# Run as User (not root)
+USER $USERID:$GROUPID
 
 COPY --chown=$USERID:$GROUPID gra-server*.jar /app/gra-server.jar
 WORKDIR /app

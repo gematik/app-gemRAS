@@ -38,8 +38,8 @@ Feature: Test Auth Endpoint
 
     Given TGR clear recorded messages
     When TGR send GET request to "http://graserver/auth" with:
-      | client_id  | state       | redirect_uri                               | code_challenge                              | code_challenge_method | response_type | nonce                | scope     | idp_iss                           |
-      | gPatClient | yyystateyyy | https://idpfadi.dev.gematik.solutions/auth | 9tI-0CQIkUYaGQOVR1emznlDFjlX0kVY1yd3oiMtGUI | S256                  | code          | vy7rM801AQw1or22GhrZ | gpatscope | https://gsi.dev.gematik.solutions |
+      | client_id  | state       | redirect_uri                               | code_challenge                              | code_challenge_method | response_type |scope     | idp_iss                           |
+      | gPatClient | yyystateyyy | https://idpfadi.dev.gematik.solutions/auth | 9tI-0CQIkUYaGQOVR1emznlDFjlX0kVY1yd3oiMtGUI | S256                  | code          | gpatscope | https://gsi.dev.gematik.solutions |
     And TGR find first request to path ".*"
     Then TGR current response with attribute "$.responseCode" matches "302"
     And TGR current response with attribute "$.header.Location" matches ".*request_uri=.*"
@@ -56,8 +56,8 @@ Feature: Test Auth Endpoint
 
     Given TGR clear recorded messages
     When TGR send GET request to "http://graserver/auth" with:
-      | client_id  | state       | redirect_uri                               | code_challenge                              | code_challenge_method    | response_type | nonce                | scope     | idp_iss   |
-      | gPatClient | yyystateyyy | https://idpfadi.dev.gematik.solutions/auth | 9tI-0CQIkUYaGQOVR1emznlDFjlX0kVY1yd3oiMtGUI | <code_challenge_message> | code          | vy7rM801AQw1or22GhrZ | gpatscope | <idp_iss> |
+      | client_id  | state       | redirect_uri                               | code_challenge                              | code_challenge_method    | response_type | scope     | idp_iss   |
+      | gPatClient | yyystateyyy | https://idpfadi.dev.gematik.solutions/auth | 9tI-0CQIkUYaGQOVR1emznlDFjlX0kVY1yd3oiMtGUI | <code_challenge_message> | code          | gpatscope | <idp_iss> |
     And TGR find first request to path ".*"
     Then TGR current response with attribute "$.responseCode" matches "302"
     And TGR current response with attribute "$.header.Location" matches ".*request_uri=.*"
@@ -82,8 +82,8 @@ Feature: Test Auth Endpoint
 
     Given TGR clear recorded messages
     When TGR send GET request to "http://graserver/auth" with:
-      | client_id  | state       | redirect_uri                               | code_challenge                              | code_challenge_method | response_type | nonce                | scope     | idp_iss                           |
-      | gPatClient | yyystateyyy | https://idpfadi.dev.gematik.solutions/auth | 9tI-0CQIkUYaGQOVR1emznlDFjlX0kVY1yd3oiMtGUI | S256                  | code          | vy7rM801AQw1or22GhrZ | gpatscope | https://gsi.dev.gematik.solutions |
+      | client_id  | state       | redirect_uri                               | code_challenge                              | code_challenge_method | response_type | scope     | idp_iss                           |
+      | gPatClient | yyystateyyy | https://idpfadi.dev.gematik.solutions/auth | 9tI-0CQIkUYaGQOVR1emznlDFjlX0kVY1yd3oiMtGUI | S256                  | code          | gpatscope | https://gsi.dev.gematik.solutions |
     And TGR find first request to path ".*"
     And TGR set local variable "requestUri" to "!{rbel:currentResponseAsString('$.header.Location.request_uri.value')}"
     And TGR set local variable "gsiAuthEndpoint" to "!{rbel:currentResponseAsString('$.header.Location.basicPath')}"

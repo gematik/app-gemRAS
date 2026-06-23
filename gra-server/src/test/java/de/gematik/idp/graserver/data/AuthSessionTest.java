@@ -30,7 +30,6 @@ class AuthSessionTest {
   void getSession() {
     final AuthSession fas =
         AuthSession.builder()
-            .frontendClientId("frontendClientId")
             .frontendCodeChallenge("frontendCodeChallenge")
             .frontendCodeChallengeMethod("frontendCodeChallengeMethod")
             .frontendState("frontendState")
@@ -39,7 +38,6 @@ class AuthSessionTest {
             .idpIss("idpIss")
             .build();
 
-    assertThat(fas.getFrontendClientId()).isNotEmpty();
     assertThat(fas.getFrontendCodeChallenge()).isNotEmpty();
     assertThat(fas.getFrontendCodeChallengeMethod()).isNotEmpty();
     assertThat(fas.getFrontendState()).isNotEmpty();

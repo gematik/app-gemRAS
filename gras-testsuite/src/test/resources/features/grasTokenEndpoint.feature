@@ -58,8 +58,8 @@ Feature: Test Token Endpoint
     And TGR set local variable "grasAuthCode" to "!{rbel:currentResponseAsString('$.body.code.content')}"
     And TGR clear recorded messages
     When TGR sende eine POST Anfrage an "http://graserver/token" mit folgenden Daten:
-      | code            | code_verifier        | grant_type         | redirect_uri                               | client_id  |
-      | ${grasAuthCode} | ${gras.codeVerifier} | authorization_code | https://idpfadi.dev.gematik.solutions/auth | gPatClient |
+      | code            | code_verifier        | grant_type         | redirect_uri                               |
+      | ${grasAuthCode} | ${gras.codeVerifier} | authorization_code | https://idpfadi.dev.gematik.solutions/auth |
     And TGR find first request to path ".*"
     Then TGR current response with attribute "$.responseCode" matches "200"
     Then TGR current response at "$.body" matches as JSON:
