@@ -34,6 +34,7 @@ import static de.gematik.idp.graserver.Constants.FD_AUTH_SERVER_NONCE_LENGTH;
 import static de.gematik.idp.graserver.Constants.FD_AUTH_SERVER_STATE_LENGTH;
 import static de.gematik.idp.graserver.Constants.FED_SIGNED_JWKS_ENDPOINT;
 import static de.gematik.idp.graserver.helper.JsonHelper.signJson;
+import static de.gematik.idp.graserver.services.RequestValidator.*;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -73,7 +74,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import kong.unirest.core.Unirest;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -100,8 +100,6 @@ public class AuthorizationController {
   @Autowired FederationPrivKey encPrivKey;
   @Autowired FederationPrivKey tlsClientPrivKey;
   @Autowired Key symmetricEncryptionKey;
-
-  private static final int NONCE_LENGTH_MAX = 512;
 
   private static final int MAX_AUTH_SESSION_AMOUNT = 10000;
 
@@ -215,9 +213,6 @@ public class AuthorizationController {
           final String frontendCodeChallengeMethod,
       @RequestParam(name = "response_type") @NotEmpty @Pattern(regexp = "code")
           final String responseType,
-      @RequestParam(name = "nonce", required = false)
-          @Pattern(regexp = "^[_\\-a-zA-Z0-9]{1," + NONCE_LENGTH_MAX + "}$", message = "2007")
-          final String frontendNonce,
       @RequestParam(name = "scope") @NotEmpty final String scope,
       @RequestParam(name = "idp_iss") @NotEmpty final String idpIss,
       final HttpServletResponse respMsgNr4) {
@@ -232,7 +227,6 @@ public class AuthorizationController {
     authSessions.put(
         fdAuthServerState,
         AuthSession.builder()
-            .frontendClientId(frontendClientId)
             .frontendCodeChallenge(frontendCodeChallenge)
             .frontendCodeChallengeMethod(frontendCodeChallengeMethod)
             .frontendResponseType(responseType)
@@ -240,7 +234,6 @@ public class AuthorizationController {
             .frontendState(frontendState)
             .frontendRedirectUri(frontendRedirectUri.toString())
             .fdAuthServerCodeVerifier(fdAuthServerCodeVerifier)
-            .frontendNonce(frontendNonce)
             .idpIss(idpIss)
             .build());
     log.debug(
@@ -349,12 +342,9 @@ public class AuthorizationController {
         thisServerUrl,
         authorizationCodeFedIdp,
         fdAuthServerState);
-    final AuthSession session =
-        Optional.ofNullable(authSessions.get(fdAuthServerState))
-            .orElseThrow(
-                () ->
-                    new FdAuthServerException(
-                        "Content of parameter state is unknown.", HttpStatus.BAD_REQUEST));
+
+    final AuthSession session = validateStateAndGetSession(fdAuthServerState, authSessions);
+
     final String sekIdpTokenEndpoint =
         getSekIdpTokenEndpointFromEntityStmnt(
             entityStmntIdpsService.getEntityStatementIdp(session.getIdpIss()));
@@ -406,9 +396,7 @@ public class AuthorizationController {
             .state(session.getFrontendState())
             .build();
 
-    // delete session
     authSessions.remove(fdAuthServerState);
-
     return authCodeResponse;
   }
 
@@ -418,7 +406,6 @@ public class AuthorizationController {
           final String grantType,
       @RequestParam(name = "code") @NotEmpty final String authorizationCodeAsEncrypted,
       @RequestParam(name = "code_verifier") @NotEmpty final String codeVerifier,
-      @RequestParam(name = "client_id") @NotEmpty final String clientId,
       @RequestParam(name = "redirect_uri") @NotEmpty final String redirectUri) {
 
     log.debug(
@@ -426,13 +413,11 @@ public class AuthorizationController {
             + " grant_type: {}, \n"
             + " code: {}, \n"
             + " code_verifier: {}, \n"
-            + " client_id: {}, \n"
             + " redirect_uri: {}",
         serverUrlService.determineServerUrl(),
         grantType,
         authorizationCodeAsEncrypted,
         codeVerifier,
-        clientId,
         redirectUri);
 
     final String authorizationCodeAsDecrypted =
@@ -444,20 +429,9 @@ public class AuthorizationController {
     final Map<String, Object> authCodeClaims =
         TokenClaimExtraction.extractClaimsFromJwtBody(authorizationCodeAsDecrypted);
 
-    if (!clientId.equals(authCodeClaims.get("client_id"))) {
-      throw new FdAuthServerException(
-          "Content of parameter client_id is invalid.", HttpStatus.BAD_REQUEST);
-    }
-    if (!redirectUri.equals(authCodeClaims.get("redirect_uri"))) {
-      throw new FdAuthServerException(
-          "Content of parameter redirect_uri is invalid.", HttpStatus.BAD_REQUEST);
-    }
+    verifyRedirectUri(redirectUri, authCodeClaims.get("redirect_uri"));
 
-    // validate code_verifier matches code_challenge stored in authorization code
-    if (!authCodeClaims.get("code_challenge").equals(generateCodeChallenge(codeVerifier))) {
-      throw new FdAuthServerException(
-          "Content of parameter code_verifier is invalid.", HttpStatus.BAD_REQUEST);
-    }
+    verifyCodeVerifier(codeVerifier, authCodeClaims.get("code_challenge"));
 
     log.debug("App2App-Flow: TX message nr 14");
     // return MsgNr14, ACCESS_TOKEN

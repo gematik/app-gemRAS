@@ -1,6 +1,9 @@
-# Release 5.2.1
+# Release 5.2.2
 
 - fix unit tests
+- add request validator
+- exclude frontEndClientId from Session and AuthCode
+- remove optional frontendNonce
 - update dependencies
 
 # Release 5.2.0
