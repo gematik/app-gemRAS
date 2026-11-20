@@ -37,7 +37,8 @@ public class OpenidRelyingParty {
   private String signedJwksUri;
   private String organizationName;
   private String clientName;
-  private String logoUri;
+  private String[] keywords;
+  private String[] contacts;
   private String[] redirectUris;
   private String[] responseTypes;
   private String[] clientRegistrationTypes;

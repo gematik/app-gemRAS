@@ -1,4 +1,4 @@
-<img align="right" width="250" height="47" src="https://raw.githubusercontent.com/gematik/gematik.github.io/master/Gematik_Logo_Flag_With_Background.png"/> <br/> 
+<img align="right" width="250" src="https://raw.githubusercontent.com/gematik/gematik.github.io/master/Gematik_Logo_Flag_With_Background.png"/> <br/> 
 
 # Gematik Reference Authorization Server
 
@@ -65,11 +65,11 @@ results.
 ### To run the tests against your own server just do the following things:
 
 * edit the tiger-external.yaml and replace "localhost:443" in line 17 with the host and the port of
-  your server (i.e.*api.mydiga.de:8443*)
+  your server (i.e. *api.mydiga.de:8443*)
 * Alternatively, you can simply start the gra-server (part of this project) to check test
   environment.
 * edit the tiger-external.yaml and replace ".well-known/openid-federation" in line 20 with the path
-  of your entity statement (i.e.*oidc/.well-known/openid-federation*)
+  of your entity statement (i.e. *oidc/.well-known/openid-federation*)
 * open a shell and enter
 
 The keys

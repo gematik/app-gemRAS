@@ -100,7 +100,6 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
     """
           {
             openid_relying_party:                      "${json-unit.ignore}",
-            federation_entity:                         "${json-unit.ignore}"
           }
     """
 
@@ -140,26 +139,6 @@ Feature: Test Entity Statement of a Relying Party (i.e. GRAS)
     """
           {
             id_token_version_supported:      ["1.0.0", "2.0.0"]
-          }
-    """
-
-  @TCID:RP_ENTITY_STATEMENT_006
-  @Approval
-  Scenario: RP EntityStatement - Gutfall - Validiere federation_entity Claim
-
-  ```
-  Wir rufen das Entity Statement einer Relying Party der Föderation ab
-
-  Der Response Body muss ein JWS sein. Dieser muss im Claim metadata, einen korrekt aufgebauten Body Claim federation_entity enthalten
-
-    When TGR find first request to path "/${tiger.fachdienstEntityStatementPath}"
-    Then TGR current response at "$.body.body.metadata.federation_entity" matches as JSON:
-    """
-          {
-            ____name:                 '.*',
-            organization_name:    '.*',
-            ____contacts:         "${json-unit.ignore}",
-            ____homepage_uri:     'http.*'
           }
     """
 

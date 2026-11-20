@@ -20,7 +20,6 @@
 
 package de.gematik.idp.graserver.test.steps;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelValueFacet;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
@@ -29,6 +28,7 @@ import groovy.util.logging.Slf4j;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import java.util.List;
+import tools.jackson.databind.node.ArrayNode;
 
 @Slf4j
 public class StepsGlue {
@@ -46,7 +46,7 @@ public class StepsGlue {
 
   @Then("current response with optional attribute contacts is either not present or a JSON Array")
   public void readContactsInCurrentResponse() throws Exception {
-    final String rbelPath = "$.body.body.metadata.federation_entity.contacts";
+    final String rbelPath = "$.body.body.metadata.openid_relying_party.contacts";
     try {
       final List<RbelElement> rbelElements =
           rbelMessageRetriever.findElementsInCurrentResponse(rbelPath);
@@ -57,7 +57,8 @@ public class StepsGlue {
               .orElseThrow(() -> new Exception("contacts is not an array"))
               .getJsonElement();
       if (!(contactsArray instanceof ArrayNode)) {
-        throw new Exception("contacts is not an array");
+        final String javaType = contactsArray == null ? "null" : contactsArray.getClass().getName();
+        throw new Exception("contacts is not an array. Java type: " + javaType);
       } else if (((ArrayNode) contactsArray).isEmpty()) {
         throw new Exception(
             "contacts is empty, but should either not be present or have at least one entry");

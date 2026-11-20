@@ -35,5 +35,4 @@ import tools.jackson.databind.annotation.JsonNaming;
 public class Metadata {
 
   private OpenidRelyingParty openidRelyingParty;
-  private FederationEntity federationEntity;
 }

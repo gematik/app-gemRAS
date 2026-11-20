@@ -39,15 +39,6 @@ public class RequestValidator {
                     "Content of parameter state is unknown", HttpStatus.BAD_REQUEST));
   }
 
-  public static void verifyRedirectUri(
-      final String redirectUri, final Object redirectUriFromAuthCode) {
-    if (!redirectUri.equals(redirectUriFromAuthCode)) {
-      throw new FdAuthServerException(
-          "Redirect_uri does not match redirect_uri from authorization code",
-          HttpStatus.BAD_REQUEST);
-    }
-  }
-
   public static void verifyCodeVerifier(final String codeVerifier, final Object codeChallenge) {
     if (!generateCodeChallenge(codeVerifier).equals(codeChallenge)) {
       throw new FdAuthServerException("CodeVerifier is invalid", HttpStatus.BAD_REQUEST);

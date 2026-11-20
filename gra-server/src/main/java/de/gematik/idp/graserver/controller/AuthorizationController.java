@@ -405,20 +405,17 @@ public class AuthorizationController {
       @RequestParam(name = "grant_type") @NotEmpty @Pattern(regexp = "authorization_code")
           final String grantType,
       @RequestParam(name = "code") @NotEmpty final String authorizationCodeAsEncrypted,
-      @RequestParam(name = "code_verifier") @NotEmpty final String codeVerifier,
-      @RequestParam(name = "redirect_uri") @NotEmpty final String redirectUri) {
+      @RequestParam(name = "code_verifier") @NotEmpty final String codeVerifier) {
 
     log.debug(
         "RX message nr.13 at {}, \n"
             + " grant_type: {}, \n"
             + " code: {}, \n"
-            + " code_verifier: {}, \n"
-            + " redirect_uri: {}",
+            + " code_verifier: {}",
         serverUrlService.determineServerUrl(),
         grantType,
         authorizationCodeAsEncrypted,
-        codeVerifier,
-        redirectUri);
+        codeVerifier);
 
     final String authorizationCodeAsDecrypted =
         getDecryptedAuthorizationCode(authorizationCodeAsEncrypted, symmetricEncryptionKey);
@@ -428,8 +425,6 @@ public class AuthorizationController {
 
     final Map<String, Object> authCodeClaims =
         TokenClaimExtraction.extractClaimsFromJwtBody(authorizationCodeAsDecrypted);
-
-    verifyRedirectUri(redirectUri, authCodeClaims.get("redirect_uri"));
 
     verifyCodeVerifier(codeVerifier, authCodeClaims.get("code_challenge"));
 

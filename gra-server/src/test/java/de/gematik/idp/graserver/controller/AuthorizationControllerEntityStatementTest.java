@@ -62,7 +62,6 @@ class AuthorizationControllerEntityStatementTest {
           "signed_jwks_uri",
           "organization_name",
           "client_name",
-          "logo_uri",
           "redirect_uris",
           "response_types",
           "client_registration_types",
@@ -74,7 +73,9 @@ class AuthorizationControllerEntityStatementTest {
           "id_token_encrypted_response_alg",
           "id_token_encrypted_response_enc",
           "scope",
-          "ti_features_supported");
+          "ti_features_supported",
+          "keywords",
+          "contacts");
 
   @Autowired FederationPubKey esSigPubKey;
 
@@ -118,7 +119,7 @@ class AuthorizationControllerEntityStatementTest {
   @Test
   void entityStatement_MetadataClaims() {
     final Map<String, Object> metadata = getInnerClaimMap(bodyClaims, "metadata");
-    assertThat(metadata).containsOnlyKeys("openid_relying_party", "federation_entity");
+    assertThat(metadata).containsOnlyKeys("openid_relying_party");
   }
 
   @SuppressWarnings("unchecked")
@@ -147,7 +148,6 @@ class AuthorizationControllerEntityStatementTest {
         .containsEntry("signed_jwks_uri", "myFD_AUTH_SERVER_URL" + "/jws.json");
     assertThat(openidRelyingParty.get("organization_name")).asString().isNotEmpty();
     assertThat(openidRelyingParty.get("client_name")).asString().isNotEmpty();
-    assertThat(openidRelyingParty.get("logo_uri")).asString().isNotEmpty();
     assertThat((List<String>) openidRelyingParty.get("redirect_uris")).hasSizeGreaterThan(0);
     assertThat((List<String>) openidRelyingParty.get("response_types"))
         .containsExactlyInAnyOrder("code");
@@ -158,30 +158,18 @@ class AuthorizationControllerEntityStatementTest {
     assertThat((List<String>) openidRelyingParty.get("default_acr_values"))
         .containsExactlyInAnyOrder("gematik-ehealth-loa-high");
     assertThat((Boolean) openidRelyingParty.get("require_pushed_authorization_requests")).isTrue();
+    assertThat((List<String>) openidRelyingParty.get("keywords"))
+        .containsExactlyInAnyOrder(
+            "product_type_version:1.0.0", "product_type:gemProdT_TI-Flow-FD_PTV");
+    assertThat((List<String>) openidRelyingParty.get("contacts"))
+        .containsExactlyInAnyOrder("Support@Fachdienst007.de");
     assertThat(openidRelyingParty)
         .containsEntry("token_endpoint_auth_method", "self_signed_tls_client_auth")
         .containsEntry("id_token_signed_response_alg", "ES256")
         .containsEntry("id_token_encrypted_response_alg", "ECDH-ES")
         .containsEntry("id_token_encrypted_response_enc", "A256GCM")
         .containsEntry("scope", "urn:telematik:display_name urn:telematik:versicherter openid");
-
     assertThat(openidRelyingParty.containsKey("ti_features_supported")).isTrue();
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  void entityStatement_FederationEntityClaimsContentCorrect() {
-    final Map<String, Object> metadata = getInnerClaimMap(bodyClaims, "metadata");
-    final Map<String, Object> federationEntity =
-        Objects.requireNonNull(
-            (Map<String, Object>) metadata.get("federation_entity"),
-            "missing claim: federation_entity");
-
-    assertThat(federationEntity)
-        .containsEntry("organization_name", "gematik")
-        .containsEntry("homepage_uri", "https://Fachdienst007.de");
-    assertThat((List<String>) federationEntity.get("contacts"))
-        .containsExactlyInAnyOrder("Support@Fachdienst007.de");
   }
 
   @Test

@@ -1,3 +1,8 @@
+# Release 5.2.4
+
+- ready for Java 25
+- update dependencies
+
 # Release 5.2.3
 
 - fix unit tests
