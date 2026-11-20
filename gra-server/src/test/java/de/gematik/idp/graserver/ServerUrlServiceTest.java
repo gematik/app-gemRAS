@@ -45,7 +45,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.MOCK)
 @TestPropertySource(
     properties = {
       "fd-auth-server.server-url=myFD_AUTH_SERVER_URL",

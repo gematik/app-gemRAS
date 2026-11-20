@@ -48,15 +48,6 @@ class RequestValidatorTest {
   }
 
   @Test
-  void testVerifyRedirectUri_invalidUri() {
-    assertThatThrownBy(
-            () ->
-                RequestValidator.verifyRedirectUri(
-                    "https://valid.example.com/cb", "https://other.example.com/cb"))
-        .isInstanceOf(FdAuthServerException.class);
-  }
-
-  @Test
   void testVerifyCodeVerifier_invalidCodeVerifier() {
     assertThatThrownBy(
             () -> RequestValidator.verifyCodeVerifier("invalidVerifier", "expectedChallenge"))

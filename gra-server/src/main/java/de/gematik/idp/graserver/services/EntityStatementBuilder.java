@@ -26,7 +26,6 @@ import de.gematik.idp.data.FederationPubKey;
 import de.gematik.idp.data.JwtHelper;
 import de.gematik.idp.graserver.configuration.FdAuthServerConfiguration;
 import de.gematik.idp.graserver.data.EntityStatement;
-import de.gematik.idp.graserver.data.FederationEntity;
 import de.gematik.idp.graserver.data.Metadata;
 import de.gematik.idp.graserver.data.OpenidRelyingParty;
 import de.gematik.idp.graserver.data.TiFeaturesSupported;
@@ -88,9 +87,8 @@ public class EntityStatementBuilder {
     final OpenidRelyingParty openidRelyingParty =
         OpenidRelyingParty.builder()
             .signedJwksUri(serverUrl + FED_SIGNED_JWKS_ENDPOINT)
-            .organizationName("Fachdienst007 des FedIdp POCs")
             .clientName("Fachdienst007")
-            .logoUri(serverUrl + "/noLogoYet")
+            .organizationName("gematik")
             .redirectUris(fdAuthServerConfiguration.getRedirectUris().toArray(new String[0]))
             .responseTypes(new String[] {"code"})
             .clientRegistrationTypes(new String[] {"automatic"})
@@ -101,21 +99,15 @@ public class EntityStatementBuilder {
             .idTokenSignedResponseAlg("ES256")
             .idTokenEncryptedResponseAlg("ECDH-ES")
             .idTokenEncryptedResponseEnc("A256GCM")
+            .keywords(
+                new String[] {"product_type_version:1.0.0", "product_type:gemProdT_TI-Flow-FD_PTV"})
+            .contacts(new String[] {"Support@Fachdienst007.de"})
             .scope("urn:telematik:display_name urn:telematik:versicherter openid")
             .tiFeaturesSupported(
                 TiFeaturesSupported.builder()
                     .idTokenVersionSupported(new String[] {"1.0.0", "2.0.0"})
                     .build())
             .build();
-    final FederationEntity federationEntity =
-        FederationEntity.builder()
-            .organization_name("gematik")
-            .contacts(new String[] {"Support@Fachdienst007.de"})
-            .homepageUri("https://Fachdienst007.de")
-            .build();
-    return Metadata.builder()
-        .openidRelyingParty(openidRelyingParty)
-        .federationEntity(federationEntity)
-        .build();
+    return Metadata.builder().openidRelyingParty(openidRelyingParty).build();
   }
 }
